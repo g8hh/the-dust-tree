@@ -25,7 +25,7 @@ addLayer("cr", {
     hotkeys: [
         {key: "p", description: "P: Reset for prestige points", onPress(){if (canReset(this.layer)) doReset(this.layer)}},
     ],
-    buyable: {
+    buyables: {
       11: {
         cost(x) { return new Decimal(1).mul(x) },
         display() { return "Blah" },
