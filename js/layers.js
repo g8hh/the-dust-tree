@@ -10,7 +10,7 @@ addLayer("cr", {
     color: "#4BDC13",
     requires: new Decimal(1), // Can be a function that takes requirement increases into account
     resource: "gathered dust", // Name of prestige currency
-    baseResource: "points", // Name of resource prestige is based on
+    baseResource: "dust", // Name of resource prestige is based on
     baseAmount() {return player.points}, // Get the current amount of baseResource
     type: "normal", // normal: cost to gain currency depends on amount gained. static: cost depends on how much you already have
     exponent: 1, // Prestige currency exponent
@@ -27,8 +27,15 @@ addLayer("cr", {
     ],
     buyable: {
       11: {
-        title: "hi"
-      }
+        cost(x) { return new Decimal(1).mul(x) },
+        display() { return "Blah" },
+        canAfford() { return player[this.layer].points.gte(this.cost()) },
+        buy() {
+            player[this.layer].points = player[this.layer].points.sub(this.cost())
+            setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(1))
+        },
+        etc
+      },
     },
     layerShown(){return true}
 })
