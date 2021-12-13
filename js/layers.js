@@ -34,9 +34,6 @@ cr_data={
 cr_startdata={
   scroungeable_dust: new Decimal(1000),
   unlocked: true,
-  points: new Decimal(0),
-  items: {
-  },
   selected: ""
 }
 
@@ -45,7 +42,6 @@ for ([column,resources] of Object.entries(cr_data.resources)){
     let id=""+(Number(column)+Number(row)+1)
     resource.id=id
     cr_data.nameid[resource.name]=id
-    cr_startdata.items[resource.name]={amount: new Decimal(1)}
     cr_data.resources[id]=resource
   }
   delete cr_data.resources[column]
@@ -53,35 +49,28 @@ for ([column,resources] of Object.entries(cr_data.resources)){
 
 function cr_getitem(id){
   if (typeof id=="string"){id=cr_data.nameid[id]}
-  return player.cr.items[cr_data.resources[id].name].amount
+  if (!cr_data.resources[id]){return new Decimal(0)}
+  return getGridData("cr",id).amount
 }
 function cr_setitem(id,amt){
   if (typeof id=="string"){id=cr_data.nameid[id]}
+  if (!cr_data.resources[id]){return}
   getGridData("cr",id).amount=amt
-  player.cr.items[cr_data.resources[id].name].amount=amt
-}
-
-function cr_additem(id,amt){
-  if (typeof id=="string" && !Number(id)){id=cr_data.nameid[id]}
-  id+=""
-  getGridData("cr",id).amount=getGridData("cr",id).amount.add(amt)
 }
 
 function cr_hasitem(id,amt){
-  if (typeof id=="string" && !Number(id)){id=cr_data.nameid[id]}
-  id+=""
-  return getGridData("cr",id).amount.gte(amt)
+  return cr_getitem(id).gte(amt)
+}
+
+function cr_additem(id,amt){
+  cr_setitem(id,cr_getitem(id).add(amt))
 }
 
 function cr_subitem(id,amt){
-  if (typeof id=="string" && !Number(id)){id=cr_data.nameid[id]}
-  id+=""
   if (cr_hasitem(id,amt)){
-    getGridData("cr",id).amount=getGridData("cr",id).amount.sub(amt)
-    return true
-  }else{
-    return false
+    cr_setitem(id,cr_getitem(id).add(amt))
   }
+  return cr_hasitem(id,amt)
 }
 
 let data={
@@ -89,7 +78,7 @@ let data={
     symbol: "CR", // This appears on the layer's node. Default is the id with the first letter capitalized
     position: 0, // Horizontal position within a row. By default it uses the layer id and sorts in alphabetical order
     startData() { return cr_startdata},
-    color: "#4BDC13",
+    color: "#AAAAAA",
     type: "none",
     row: 0, // Row the layer is in on the tree (0 is the first row)
     hotkeys: [],
@@ -129,9 +118,9 @@ let data={
       },
       13: {
         canClick() {
-          if (cr_data.craft_data[getClickableState(this.layer,11)+"C"+getClickableState(this.layer,12)]){
-            let ing1=getClickableState(this.layer,11)
-            let ing2=getClickableState(this.layer,12)
+          let ing1=getClickableState(this.layer,11)
+          let ing2=getClickableState(this.layer,12)
+          if (cr_data.craft_data[ing1+"C"+ing2]||cr_data.craft_data[ing2+"C"+ing1]){
             return ((cr_hasitem(ing1,1)&&cr_hasitem(ing2,1))&&
             (!(ing1==ing2) || cr_hasitem(ing1,2)))//if they're the same, check you have 2 of em
             
@@ -140,8 +129,9 @@ let data={
         onClick() {
           let ing1=getClickableState(this.layer,11)
           let ing2=getClickableState(this.layer,12)
+          if (!cr_data.craft_data[ing1+"C"+ing2]){ing1,ing2=ing2,ing1}
           if (
-          (cr_hasitem(ing1,1)&&cr_hasitem(ing2,1))&&
+            (cr_hasitem(ing1,1)&&cr_hasitem(ing2,1))&&
           (!ing1==ing2 || cr_hasitem(ing1,2))//if they're the same, check you have 2 of em
           
           ){
@@ -152,7 +142,10 @@ let data={
           }
         },
         display() {
-          let result=cr_data.craft_data[getClickableState(this.layer,11)+"C"+getClickableState(this.layer,12)]
+          let ing1=getClickableState(this.layer,11)
+          let ing2=getClickableState(this.layer,12)
+          let result=cr_data.craft_data[ing1+"C"+ing2]
+          if (!result){result=cr_data.craft_data[ing2+"C"+ing1]}
           if (!result) return "no craftable item"
           return `${result[0].r}`
         }
@@ -180,11 +173,23 @@ let data={
           return true
       },
       getStyle(data, id) {
-          col="#000000"
-          if (cr_data.resources[id]){
-            col=cr_data.resources[id].c
-          }
-          return {'background-color': data.amount.gt(0)?(player.cr.selected==cr_data.resources[id].name?LightenDarkenColor(col,64):col):"#222222"}
+        let col="#000000"
+        let is_selected=false
+        if (cr_data.resources[id]){
+          col=cr_data.resources[id].c
+          is_selected=player.cr.selected==cr_data.resources[id].name
+        }
+        let time=0
+        if (is_selected){
+          const d = new Date();
+          time = d.getTime();
+        }
+        let style={
+          'background-color': cr_getitem(id)&&data.amount.gt(0)?
+                                (is_selected?LightenDarkenColor(col,64):col)
+                              :"#222222"
+        }
+        return style
       },
       onClick(data, id) { // Don't forget onHold
           if (cr_data.resources[id]){
