@@ -68,7 +68,7 @@ function cr_additem(id,amt){
 
 function cr_subitem(id,amt){
   if (cr_hasitem(id,amt)){
-    cr_setitem(id,cr_getitem(id).add(amt))
+    cr_setitem(id,cr_getitem(id).sub(amt))
   }
   return cr_hasitem(id,amt)
 }
