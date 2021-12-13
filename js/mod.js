@@ -3,7 +3,7 @@ let modInfo = {
 	id: "adewredsyewertfghutyrerwfgdt",
 	author: "nobody",
 	pointsName: "dust",
-	modFiles: ["layers.js", "tree.js"],
+	modFiles: ["functions.js","layers.js", "tree.js"],
 
 	discordName: "",
 	discordLink: "",
