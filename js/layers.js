@@ -8,7 +8,7 @@ cr_data={
       {name:"pressed dust",c:"#888888"},
       {name:"dust bricks",c:"#AAAAAA"},
       {name:"dust shard",c:"#BBBBBB"},
-      {name:"engraved brick",c:"#AAAAAA"},
+      {name:"engraved bricks",c:"#AAAAAA"},
     ],
     200:[
       {name:"lively dust",c:"#C97ACC"},
@@ -23,10 +23,12 @@ cr_data={
     "dustCdust":[{a:1,r:"compressed dust"}],
     "compressed dustCcompressed dust":[{a:1,r:"dust bricks"}],
     "dust bricksCdust bricks":[{a:3,r:"dust shard"}],
-    "dust bricksCdust shard":[{a:1,r:"engraved brick"},{a:1,r:"dust shard"}],
+    "dust bricksCdust shard":[{a:1,r:"engraved bricks"},{a:1,r:"dust shard"}],
     "dust bricksCcompressed dust":[{a:1,r:"pressed dust"}],
     "dust bricksCdust":[{a:1,r:"biomass"}],
     "biomassCdust shard":[{a:1,r:"log"}],
+    "engraved bricksCdust":[{a:1,r:"engraved bricks"},{a:1,r:"lively dust"},{a:1,r:"responsive dust"}],
+    "lively dustCresponsive dust":[{a:1,r:"dust"}]
   },
   nameid:{}
 }
@@ -84,7 +86,7 @@ let data={
     hotkeys: [],
     buyables: {
       11: {
-        display() { return `${player.cr.scroungeable_dust} renaining\n${cr_getitem("dust").amount} dust in storage.\ngather ${this.cost()} dust` },
+        display() { return `${player.cr.scroungeable_dust} renaining\n${cr_getitem("dust")} dust in storage.\ngather ${this.cost()} dust` },
         canAfford() { return player.cr.scroungeable_dust.gt(0) },
         cost() {return 1},
         buy() {
@@ -135,7 +137,7 @@ let data={
           }
           if (
             (cr_hasitem(ing1,1)&&cr_hasitem(ing2,1))&&
-          (!ing1==ing2 || cr_hasitem(ing1,2))//if they're the same, check you have 2 of em
+          (!(ing1==ing2) || cr_hasitem(ing1,2))//if they're the same, check you have 2 of em
           
           ){
             for(i in result){
@@ -160,10 +162,10 @@ let data={
       },
     },
     tabFormat: {
-      "Main tab": {
+      "dust gathering": {
           content: ["buyables"],
       },
-      "Other tab": {
+      "crafting": {
           content: ["clickables","grid"],
       },
     },
