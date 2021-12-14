@@ -101,7 +101,7 @@ var systemComponents = {
 		</div></div>
 			`
 	},
-
+  /*
 	'overlay-head': {
 		template: `			
 		<div class="overlayThing" style="padding-bottom:7px; width: 90%; z-index: 1000; position: relative">
@@ -121,6 +121,7 @@ var systemComponents = {
 	</div>
 	`
     },
+    */
 
     'info-tab': {
         template: `
