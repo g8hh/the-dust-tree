@@ -26,7 +26,7 @@ cr_data={
     "dust bricksCdust shard":[{a:1,r:"engraved bricks"},{a:1,r:"dust shard"}],
     "dust bricksCcompressed dust":[{a:1,r:"pressed dust"}],
     "dust bricksCdust":[{a:1,r:"biomass"}],
-    "biomassCdust shard":[{a:1,r:"log"}],
+    "biomassCdust shard":[{a:1,r:"rigid biomass"}],
     "engraved bricksCdust":[{a:1,r:"engraved bricks"},{a:1,r:"lively dust"},{a:1,r:"responsive dust"}],
     "lively dustCresponsive dust":[{a:1,r:"dust"}]
   },
@@ -93,6 +93,7 @@ let data={
             player.cr.scroungeable_dust = player.cr.scroungeable_dust.sub(this.cost())
             cr_additem("dust",1)
         },
+        onHold(){},
       },
     },
     clickables: {
