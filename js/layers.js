@@ -65,8 +65,10 @@ function cr_getitem(id){
   if (!player.cr.items[itemname]){
     player.cr.items[itemname]=cr_newitem(id)
   }
-  //probably useless, but just so grid data feels needed
-  getGridData("cr",id).amount
+  if (!player.cr.items[itemname].amount.add){
+    console.log(`fixing ${itemname}, be more careful!`)
+    player.cr.items[itemname].amount=new Decimal(player.cr.items[itemname].amount)
+  }
   return player.cr.items[itemname].amount
 }
 function cr_setitem(id,amt){
@@ -238,7 +240,7 @@ let data={
           }
       },
       getDisplay(data, id) {
-          return cr_getitem(id).amount
+          return cr_getitem(id)
       },
     },
     layerShown(){return true}

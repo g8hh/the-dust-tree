@@ -77,4 +77,5 @@ function maxTickLength() {
 // Use this if you need to undo inflation from an older version. If the version is older than the version that fixed the issue,
 // you can cap their current resources with this.
 function fixOldSave(oldVersion){
+  //not inflation fix, but it does fix any save with non-decimal items.
 }

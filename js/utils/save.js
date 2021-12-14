@@ -150,6 +150,12 @@ function fixSave() {
 					player.subtabs[layer][item] = Object.keys(layers[layer].microtabs[item])[0];
 		}
 	}
+
+  //because decimal.js deserializes as strings unless you tell it not to
+  for ([key,value] of Object.entries(player.cr.items)){
+    value.amount=new Decimal(value.amount)
+  }
+
 }
 function fixData(defaultData, newData) {
 	for (item in defaultData) {
