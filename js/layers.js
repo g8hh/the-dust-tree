@@ -129,14 +129,18 @@ let data={
         onClick() {
           let ing1=getClickableState(this.layer,11)
           let ing2=getClickableState(this.layer,12)
-          if (!cr_data.craft_data[ing1+"C"+ing2]){ing1,ing2=ing2,ing1}
+          let result=cr_data.craft_data[ing1+"C"+ing2]
+          if (!result){
+            result=cr_data.craft_data[ing2+"C"+ing1]
+          }
           if (
             (cr_hasitem(ing1,1)&&cr_hasitem(ing2,1))&&
           (!ing1==ing2 || cr_hasitem(ing1,2))//if they're the same, check you have 2 of em
           
           ){
-            let result=cr_data.craft_data[ing1+"C"+ing2]
-            cr_additem(result[0].r,1)
+            for(i in result){
+              cr_additem(result[i].r,result[i].a)
+            }
             cr_subitem(ing1,1)
             cr_subitem(ing2,1)
           }
@@ -147,7 +151,11 @@ let data={
           let result=cr_data.craft_data[ing1+"C"+ing2]
           if (!result){result=cr_data.craft_data[ing2+"C"+ing1]}
           if (!result) return "no craftable item"
-          return `${result[0].r}`
+          let output=""
+          for(i in result){
+            output+=`${result[i].a}x ${result[i].r}\n`
+          }
+          return output
         }
       },
     },
