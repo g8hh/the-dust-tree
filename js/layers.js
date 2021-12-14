@@ -5,7 +5,6 @@ cr_data={
     100:[
       {name:"dust",c:"#AAAAAA"},
       {name:"compressed dust",c:"#888888"},
-      {name:"pressed dust",c:"#888888"},
       {name:"dust bricks",c:"#AAAAAA"},
       {name:"dust shard",c:"#BBBBBB"},
       {name:"engraved bricks",c:"#AAAAAA"},
@@ -24,8 +23,7 @@ cr_data={
     "compressed dustCcompressed dust":[{a:1,r:"dust bricks"}],
     "dust bricksCdust bricks":[{a:3,r:"dust shard"}],
     "dust bricksCdust shard":[{a:1,r:"engraved bricks"},{a:1,r:"dust shard"}],
-    "dust bricksCcompressed dust":[{a:1,r:"pressed dust"}],
-    "dust bricksCdust":[{a:1,r:"biomass"}],
+    "dust bricksClively dust":[{a:1,r:"biomass"}],
     "biomassCdust shard":[{a:1,r:"rigid biomass"}],
     "engraved bricksCdust":[{a:1,r:"engraved bricks"},{a:1,r:"lively dust"},{a:1,r:"responsive dust"}],
     "lively dustCresponsive dust":[{a:1,r:"dust"}]
@@ -51,9 +49,17 @@ for ([column,resources] of Object.entries(cr_data.resources)){
 }
 
 function cr_newitem(id){
-  return {amount: new Decimal(0)}
+  return {amount: new Decimal(0), haveseen: false}
 }
-
+function cr_getobj(id){
+  if (typeof id=="string"){id=cr_data.nameid[id]}
+  if (!cr_data.resources[id]){return {}}
+  let itemname=cr_data.resources[id].name
+  if (!player.cr.items[itemname]){
+    player.cr.items[itemname]=cr_newitem(id)
+  }
+  return player.cr.items[itemname]
+}
 function cr_getitem(id){
   //return new Decimal(0)
   
@@ -82,7 +88,12 @@ function cr_setitem(id,amt){
   if (!player.cr.items[itemname]){
     player.cr.items[itemname]=cr_newitem(id)
   }
-  getGridData("cr",id).amount=amt
+  if (!player.cr.items[itemname].haveseen){
+    if (player.cr.items[itemname].amount.gte(0)){
+      player.cr.items[itemname].haveseen=true
+    }
+  }
+  setGridData("cr",id,!getGridData("cr",id))
   player.cr.items[itemname].amount=amt
 }
 
@@ -201,10 +212,9 @@ let data={
     },
     grid: {
       rows: 7,
-      cols: 6,
+      cols: 8,
       getStartData(id) {
-          let data=cr_newitem(id||-1)
-          return data
+          return true
       },
       getUnlocked(id) { // Default
           return true
@@ -234,7 +244,11 @@ let data={
       },
       getTitle(data, id) {
           if (cr_data.resources[id]){
-            return cr_data.resources[id].name
+            if (cr_getobj(id).haveseen){
+              return cr_data.resources[id].name
+            }else{
+              return "none"
+            }
           }else{
             return "none"
           }
