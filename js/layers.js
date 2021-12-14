@@ -36,7 +36,8 @@ cr_data={
 cr_startdata={
   scroungeable_dust: new Decimal(1000),
   unlocked: true,
-  selected: ""
+  selected: "",
+  items: {}
 }
 
 for ([column,resources] of Object.entries(cr_data.resources)){
@@ -49,15 +50,38 @@ for ([column,resources] of Object.entries(cr_data.resources)){
   delete cr_data.resources[column]
 }
 
+function cr_newitem(id){
+  return {amount: new Decimal(0)}
+}
+
 function cr_getitem(id){
+  //return new Decimal(0)
+  
   if (typeof id=="string"){id=cr_data.nameid[id]}
-  if (!cr_data.resources[id]){return new Decimal(0)}
-  return getGridData("cr",id).amount
+  if (!cr_data.resources[id]){
+    return new Decimal(0)
+  }
+  let itemname=cr_data.resources[id].name
+  if (!player.cr.items[itemname]){
+    player.cr.items[itemname]=cr_newitem(id)
+  }
+  //probably useless, but just so grid data feels needed
+  getGridData("cr",id).amount
+  return player.cr.items[itemname].amount
 }
 function cr_setitem(id,amt){
+  //in case amt is passed as a normal value
+  amt=new Decimal(amt)
+  //so id can be things like "dust"
   if (typeof id=="string"){id=cr_data.nameid[id]}
+  //and non-resources shouldn't be accessible
   if (!cr_data.resources[id]){return}
+  let itemname=cr_data.resources[id].name
+  if (!player.cr.items[itemname]){
+    player.cr.items[itemname]=cr_newitem(id)
+  }
   getGridData("cr",id).amount=amt
+  player.cr.items[itemname].amount=amt
 }
 
 function cr_hasitem(id,amt){
@@ -65,7 +89,10 @@ function cr_hasitem(id,amt){
 }
 
 function cr_additem(id,amt){
-  cr_setitem(id,cr_getitem(id).add(amt))
+  item_amt=cr_getitem(id)
+  if (item_amt){
+    cr_setitem(id,item_amt.add(amt))
+  }
 }
 
 function cr_subitem(id,amt){
@@ -174,7 +201,7 @@ let data={
       rows: 7,
       cols: 6,
       getStartData(id) {
-          let data={amount: new Decimal(0)}
+          let data=cr_newitem(id||-1)
           return data
       },
       getUnlocked(id) { // Default
@@ -190,15 +217,11 @@ let data={
           col=cr_data.resources[id].c
           is_selected=player.cr.selected==cr_data.resources[id].name
         }
-        let time=0
-        if (is_selected){
-          const d = new Date();
-          time = d.getTime();
-        }
-        let style={
-          'background-color': cr_getitem(id)&&data.amount.gt(0)?
-                                (is_selected?LightenDarkenColor(col,64):col)
-                              :"#222222"
+        let style={"background-color": "#222222"}
+        if (cr_getitem(id)){
+          if (cr_getitem(id).gt(0)){
+            style["background-color"]=(is_selected?LightenDarkenColor(col,64):col)
+          }
         }
         return style
       },
@@ -215,7 +238,7 @@ let data={
           }
       },
       getDisplay(data, id) {
-          return data.amount
+          return cr_getitem(id).amount
       },
     },
     layerShown(){return true}
