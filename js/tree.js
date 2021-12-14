@@ -3,7 +3,10 @@ var layoutInfo = {
     startNavTab: "tree-tab",
 	showTree: true,
 
-    treeLayout: ""
+    treeLayout: [
+      ["cr"],
+      ["blank","ma"]
+    ]
 
     
 }

@@ -6,16 +6,20 @@ cr_data={
       {name:"dust",c:"#AAAAAA"},
       {name:"compressed dust",c:"#888888"},
       {name:"dust bricks",c:"#AAAAAA"},
-      {name:"dust shard",c:"#BBBBBB"},
       {name:"engraved bricks",c:"#AAAAAA"},
+      {name:"dust shard",c:"#BBBBBB"},
+      {name:"dust pebbles",c:"#CCCCCC"},
     ],
     200:[
       {name:"lively dust",c:"#C97ACC"},
+      {name:"lively pebbles",c:"#85A87D"},
+      {name:"lively chunk",c:"#85A87D"},
       {name:"biomass",c:"#85A87D"},
-      {name:"log",c:"#A2552A"},
     ],
     300:[
-      {name:"responsive dust",c:"#DBC046"}
+      {name:"responsive dust",c:"#DBC046"},
+      {name:"signal slate",c:"#DBC046"},
+      {name:"logic slate",c:"#DBC046"},
     ]
   },
   craft_data:{
@@ -23,10 +27,14 @@ cr_data={
     "compressed dustCcompressed dust":[{a:1,r:"dust bricks"}],
     "dust bricksCdust bricks":[{a:3,r:"dust shard"}],
     "dust bricksCdust shard":[{a:1,r:"engraved bricks"},{a:1,r:"dust shard"}],
-    "dust bricksClively dust":[{a:1,r:"biomass"}],
-    "biomassCdust shard":[{a:1,r:"rigid biomass"}],
+    "dust bricksCcompressed dust":[{a:1,r:"dust bricks"},{a:3,r:"dust pebbles"}],
+    "dust pebblesClively dust":[{a:1,r:"lively pebbles"}],
+    "lively pebblesClively pebbles":[{a:1,r:"lively chunk"}],
+    "lively chunkClively chunk":[{a:1,r:"biomass"}],
     "engraved bricksCdust":[{a:1,r:"engraved bricks"},{a:1,r:"lively dust"},{a:1,r:"responsive dust"}],
-    "lively dustCresponsive dust":[{a:1,r:"dust"}]
+    "lively dustCresponsive dust":[{a:1,r:"dust"}],
+    "responsive dustCengraved bricks":[{a:1,r:"signal slate"}],
+    "responsive dustCsignal slate":[{a:1,r:"logic slate"}],
   },
   nameid:{}
 }
@@ -48,9 +56,13 @@ for ([column,resources] of Object.entries(cr_data.resources)){
   delete cr_data.resources[column]
 }
 
+//grid getting funcs
+{
+//called internally for new items
 function cr_newitem(id){
   return {amount: new Decimal(0), haveseen: false}
 }
+//gets all of an item's data
 function cr_getobj(id){
   if (typeof id=="string"){id=cr_data.nameid[id]}
   if (!cr_data.resources[id]){return {}}
@@ -60,6 +72,7 @@ function cr_getobj(id){
   }
   return player.cr.items[itemname]
 }
+//gets an item's amount
 function cr_getitem(id){
   //return new Decimal(0)
   
@@ -77,6 +90,7 @@ function cr_getitem(id){
   }
   return player.cr.items[itemname].amount
 }
+//sets an item's amount to a given value
 function cr_setitem(id,amt){
   //in case amt is passed as a normal value
   amt=new Decimal(amt)
@@ -96,23 +110,58 @@ function cr_setitem(id,amt){
   setGridData("cr",id,!getGridData("cr",id))
   player.cr.items[itemname].amount=amt
 }
-
+//returns if the item's amount is >= to given value
 function cr_hasitem(id,amt){
   return cr_getitem(id).gte(amt)
 }
-
+//adds a given value from an item
 function cr_additem(id,amt){
   item_amt=cr_getitem(id)
   if (item_amt){
     cr_setitem(id,item_amt.add(amt))
   }
 }
-
+//subtracts a given value from an item
 function cr_subitem(id,amt){
   if (cr_hasitem(id,amt)){
     cr_setitem(id,cr_getitem(id).sub(amt))
   }
   return cr_hasitem(id,amt)
+}
+//gets item's grid id given its name
+function cr_getidname(id){
+  if (typeof id=="string"){id=cr_data.nameid[id]}
+  if (!cr_data.resources[id]){
+    return new Decimal(0)
+  }
+  let itemname=cr_data.resources[id].name
+  return itemname
+}
+}
+//?
+{
+function cr_select_resource(button){
+  if (player.cr.selected==button){
+    player.cr.selected=""
+  }else{
+    player.cr.selected=button
+  }
+}
+function cr_getcraftstyle(button){
+  let itemname=getClickableState(button.layer,button.id)
+  let id=cr_data.nameid[itemname]
+  let col="#000000"
+  if (cr_data.resources[id]){
+    col=cr_data.resources[id].c
+  }
+  let style={"background-color": "#222222"}
+  if (cr_getitem(itemname)){
+    if (cr_getitem(itemname).gt(0)){
+      style["background-color"]=col
+    }
+  }
+  return style
+}
 }
 
 let data={
@@ -147,7 +196,8 @@ let data={
             player.cr.selected=""
           }
         },
-        display() {return getClickableState(this.layer,this.id)}
+        display() {return getClickableState(this.layer,this.id)},
+        style(){return cr_getcraftstyle(this)}
       },
       12: {
         canClick() {return true},
@@ -157,7 +207,8 @@ let data={
             player.cr.selected=""
           }
         },
-        display() {return getClickableState(this.layer,this.id)}
+        display() {return getClickableState(this.layer,this.id)},
+        style(){return cr_getcraftstyle(this)}
       },
       13: {
         canClick() {
@@ -211,8 +262,8 @@ let data={
       },
     },
     grid: {
-      rows: 7,
-      cols: 8,
+      rows: 10,
+      cols: 7,
       getStartData(id) {
           return true
       },
@@ -260,13 +311,40 @@ let data={
     layerShown(){return true}
 }
 
-function cr_select_resource(button){
-  if (player.cr.selected==button){
-    player.cr.selected=""
-  }else{
-    player.cr.selected=button
-  }
-}
-
 
 addLayer("cr", data)
+
+addLayer("ma", {
+  name: "machining",
+  symbol: "MA",
+  startData() { return {points: new Decimal(0),}},
+  type: "none",
+  color: "#DBC046",
+  grid: {
+    rows:7,
+    cols:7,
+    getStartData(){return {contents:"?"}},
+    getTitle(data,id){
+      return data.contents
+    },
+    onClick(data,id){
+      if (player.cr.selected) {
+        data.contents=player.cr.selected
+      }
+    },
+    getStyle(data,id){
+      return {
+        "background-color": (id%100+(Math.floor(id/100)))%2==1?"#36d106":"#87fa23",
+        "border-radius": `${id==101?"20px":"0px"} ${id==107?"20px":"0px"} ${id==707?"20px":"0px"} ${id==701?"20px":"0px"}`
+      }
+    }
+  },
+  tabFormat: {
+    designer: {
+      content:[
+        "grid",
+        ["layer-proxy",["cr",[["grid",[3]]]]]
+      ]
+    }
+  }
+})
