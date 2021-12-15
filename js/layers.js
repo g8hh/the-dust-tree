@@ -356,10 +356,11 @@ addLayer("ma", {
     onClick(data,id){
       if ((id%100==1||id%100==9||id<200||id>900)){
         let toggle=data.toggle
-        if(id<200   ){for (l=101;l<=109;l++   ){getGridData("ma",l).toggle=-1} cr_updatesprite(l+100)}
-        if(id>900   ){for (l=901;l<=909;l++   ){getGridData("ma",l).toggle=-1} cr_updatesprite(l-100)}
-        if(id%100==1){for (l=101;l<=901;l+=100){getGridData("ma",l).toggle=-1} cr_updatesprite(l+1)}
-        if(id%100==9){for (l=109;l<=909;l+=100){getGridData("ma",l).toggle=-1} cr_updatesprite(l-1)}
+        data.toggle=!toggle
+        if(id<200   ){for (let l=101;l<=109;l++    ){getGridData("ma",l).toggle=-1;}}
+        if(id>900   ){for (let l=901;l<=909;l++    ){getGridData("ma",l).toggle=-1;}}
+        if(id%100==1){for (let l=101;l<=901;l=l+100){getGridData("ma",l).toggle=-1;}}
+        if(id%100==9){for (let l=109;l<=909;l=l+100){getGridData("ma",l).toggle=-1;}}
         data.toggle=!toggle
       }else if (player.cr.selected){
         if (Math.floor(cr_data.nameid[player.cr.selected]/100)==3){
