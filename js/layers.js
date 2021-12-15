@@ -18,6 +18,7 @@ cr_data={
     ],
     300:[
       {name:"responsive dust",c:"#DBC046"},
+      {name:"responsive cable",c:"#DBC046"},
       {name:"signal slate",c:"#DBC046"},
       {name:"logic slate",c:"#DBC046"},
     ]
@@ -33,6 +34,7 @@ cr_data={
     "lively chunkClively chunk":[{a:1,r:"biomass"}],
     "engraved bricksCdust":[{a:1,r:"engraved bricks"},{a:1,r:"lively dust"},{a:1,r:"responsive dust"}],
     "lively dustCresponsive dust":[{a:1,r:"dust"}],
+    "responsive dustCdust shard":[{a:1,r:"responsive cable"}],
     "responsive dustCengraved bricks":[{a:1,r:"signal slate"}],
     "responsive dustCsignal slate":[{a:1,r:"logic slate"}],
   },
@@ -343,47 +345,67 @@ addLayer("ma", {
     cols:9,
     getStartData(){
       txt=""
-      let data={contents:txt,wire_sprite:1}
+      //held signal format
+      /*
+        {
+          value: (regular number),
+          prevpos: (id (202, e.g), will move if there is a free wire that isn't prevpos)
+        }
+        conflicts in movement are resolved by sending the biggest number first. (negating everything therefore could be used to send the minimum)
+        addition =a-(0-b)
+        
+      */
+      let data={contents:txt,wire_sprite:1,held_signal:null}
       if (id%100==1||id%100==9||id<200||id>=900){
         data.toggle=-1
       }
       return data
     },
     getTitle(data,id){
-      return data.contents
+      return ""
     },
     getDisplay(data,id){},
     onClick(data,id){
-      if ((id%100==1||id%100==9||id<200||id>900)){
-        let toggle=data.toggle
-        data.toggle=!toggle
-        if(id<200   ){for (let l=101;l<=109;l++    ){getGridData("ma",l).toggle=-1;}}
-        if(id>900   ){for (let l=901;l<=909;l++    ){getGridData("ma",l).toggle=-1;}}
-        if(id%100==1){for (let l=101;l<=901;l=l+100){getGridData("ma",l).toggle=-1;}}
-        if(id%100==9){for (let l=109;l<=909;l=l+100){getGridData("ma",l).toggle=-1;}}
-        data.toggle=!toggle
-      }else if (player.cr.selected){
-        if (Math.floor(cr_data.nameid[player.cr.selected]/100)==3){
-          data.contents=player.cr.selected
+      if (player.subtabs.ma.mainTabs=="designer"){
+        
+        if ((id%100==1||id%100==9||id<200||id>900)){
+          let toggle=data.toggle
+          data.toggle=!toggle
+          if(id<200   ){for (let l=101;l<=109;l++    ){getGridData("ma",l).toggle=-1;}}
+          if(id>900   ){for (let l=901;l<=909;l++    ){getGridData("ma",l).toggle=-1;}}
+          if(id%100==1){for (let l=101;l<=901;l=l+100){getGridData("ma",l).toggle=-1;}}
+          if(id%100==9){for (let l=109;l<=909;l=l+100){getGridData("ma",l).toggle=-1;}}
+          for(lx=2;lx<=8;lx++){
+            for(ly=200;ly<=800;ly+=100){
+              cr_updatesprite(lx+ly)
+            }
+          }
+          data.toggle=!toggle
+        }else if (player.cr.selected){
+          if (Math.floor(cr_data.nameid[player.cr.selected]/100)==3){
+            data.contents=player.cr.selected
+          }
+        }else{
+          data.contents=""
         }
-      }else{
-        data.contents=""
-      }
-      for (ox=-1;ox<=1;ox+=2){
-        cr_updatesprite(id+ox)
-      }
-      for (oy=-1;oy<=1;oy+=2){
-        cr_updatesprite(id+oy*100)
+        for (ox=-1;ox<=1;ox+=2){
+          cr_updatesprite(id+ox)
+        }
+        for (oy=-1;oy<=1;oy+=2){
+          cr_updatesprite(id+oy*100)
+        }
       }
       cr_updatesprite(id)
     },
     getStyle(data,id){
       let style = {
         "background-color": (id%100+(Math.floor(id/100)))%2==1?"#36d106":"#87fa23",
-        "border-radius": `${id==202?"20px":"0px"} ${id==208?"20px":"0px"} ${id==808?"20px":"0px"} ${id==802?"20px":"0px"}`,
-        "background-size": "auto 200%",
+        "border-radius": `${id==202?"10px":"0px"} ${id==208?"10px":"0px"} ${id==808?"10px":"0px"} ${id==802?"10px":"0px"}`,
+        "border": "none",
+        "background-size": "auto 100%",
         //"image-rendering": "pixelated",
         "background-image": "url(./blank.png)",
+        "transition": "background-position 0s"
       }
       let lrside=id%100==1||id%100==9
       let tbside=id<200||id>=900
@@ -396,10 +418,24 @@ addLayer("ma", {
       if(tbside||lrside){
         style["background-color"]=data.toggle===-1?"#222222":(data.toggle?"#eb7d34":"#3496eb")
       }else{
-        if (data.contents=="responsive dust"){
-          style["background-image"]='url("./wire_base_E.png")'
-          let pos=`${-data.wire_sprite*200}% 50%`
+        if (data.contents=="responsive cable"){
+          style["background-image"]='url("./wire_E.png")'
+          let pos=`${-data.wire_sprite*100}% 50%`
+          style["background-image"]='url("./wire_E.png")'
           style["background-position"]=pos
+        }else if (data.contents=="responsive dust"){
+          let pos=`${-data.wire_sprite*100}% 50%`
+          style["background-position"]=pos
+          style["background-image"]='url("./responsive_dust_E.png")'
+        }else if (data.contents=="signal slate"){
+          let pos=`${-data.wire_sprite*100}% 50%`
+          style["background-position"]=pos
+          style["background-image"]='url("./signal_slate_E.png")'
+        }else if (data.contents=="logic slate"){
+          let pos=`${-data.wire_sprite*100}% 50%`
+          style["background-position"]=pos
+          style["background-image"]='url("./logic_slate_E.png")'
+
         }
       }
       if(tbside&&lrside){
@@ -413,6 +449,11 @@ addLayer("ma", {
       content:[
         "grid",
         ["layer-proxy",["cr",[["grid",[3]]]]]
+      ]
+    },
+    simulator: {
+      content:[
+        "grid"
       ]
     }
   }
