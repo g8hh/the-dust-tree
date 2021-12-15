@@ -101,6 +101,7 @@ var systemComponents = {
 		</div></div>
 			`
 	},
+  //deleted the heading in the tree menu
   /*
 	'overlay-head': {
 		template: `			

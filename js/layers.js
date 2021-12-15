@@ -40,7 +40,7 @@ cr_data={
 }
 
 cr_startdata={
-  scroungeable_dust: new Decimal(1000),
+  scroungeable_dust: new Decimal("2e6"),
   unlocked: true,
   selected: "",
   items: {}
@@ -321,22 +321,50 @@ addLayer("ma", {
   type: "none",
   color: "#DBC046",
   grid: {
-    rows:7,
-    cols:7,
-    getStartData(){return {contents:"?"}},
+    rows:9,
+    cols:9,
+    getStartData(){
+      txt=""
+      let data={contents:txt}
+      if (id%100==1||id%100==9||id<200||id>=900){
+        data.toggle=-1
+      }
+      return data
+    },
     getTitle(data,id){
       return data.contents
     },
     onClick(data,id){
-      if (player.cr.selected) {
-        data.contents=player.cr.selected
+      if ((id%100==1||id%100==9||id<200||id>900)){
+        let toggle=data.toggle
+        if(id<200   ){for (l=101;l<=109;l++   ){getGridData("ma",l).toggle=-1}}
+        if(id>900   ){for (l=901;l<=909;l++   ){getGridData("ma",l).toggle=-1}}
+        if(id%100==1){for (l=101;l<=901;l+=100){getGridData("ma",l).toggle=-1}}
+        if(id%100==9){for (l=109;l<=909;l+=100){getGridData("ma",l).toggle=-1}}
+        data.toggle=!toggle
+      }
+      if (player.cr.selected){
+        if (Math.floor(cr_data.nameid[player.cr.selected]/100)==3){
+          data.contents=player.cr.selected
+        }
+      }else{
+        data.contents=""
       }
     },
     getStyle(data,id){
-      return {
+      let style = {
         "background-color": (id%100+(Math.floor(id/100)))%2==1?"#36d106":"#87fa23",
-        "border-radius": `${id==101?"20px":"0px"} ${id==107?"20px":"0px"} ${id==707?"20px":"0px"} ${id==701?"20px":"0px"}`
+        "border-radius": `${id==202?"20px":"0px"} ${id==208?"20px":"0px"} ${id==808?"20px":"0px"} ${id==802?"20px":"0px"}`,
       }
+      if (id%100==1||id%100==9){
+        style.width="10%"
+        style["background-color"]=data.toggle===-1?"#222222":(data.toggle?"#eb7d34":"#3496eb")
+      }
+      if (id<200||id>=900){
+        style.height="10%"
+        style["background-color"]=data.toggle===-1?"#222222":(data.toggle?"#eb7d34":"#3496eb")
+      }
+      return style
     }
   },
   tabFormat: {
