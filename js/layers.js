@@ -138,7 +138,7 @@ function cr_getidname(id){
   return itemname
 }
 }
-//?
+//misc
 {
 function cr_select_resource(button){
   if (player.cr.selected==button){
@@ -161,6 +161,24 @@ function cr_getcraftstyle(button){
     }
   }
   return style
+}
+//updates the connected wire sprites
+cr_orderofchecks=[
+  {x: 1,y: 0},
+  {x: 0,y: 1},
+  {x:-1,y: 0},
+  {x: 0,y:-1}
+]
+function cr_updatesprite(id){
+  if(id%100<=1||id%100>=9||id<200||id>900){return}
+  let spr=0
+  for (l=0;l<=3;l++){
+    let o=cr_orderofchecks[l]
+    let data=getGridData("ma",id+o.x+o.y*100)
+    spr+=data.contents!==""||data.toggle!==-1?2**(l):0
+  }
+  getGridData("ma",id).wire_sprite=spr
+  setGridData("ma",id,getGridData("ma",id))
 }
 }
 
@@ -325,7 +343,7 @@ addLayer("ma", {
     cols:9,
     getStartData(){
       txt=""
-      let data={contents:txt}
+      let data={contents:txt,wire_sprite:1}
       if (id%100==1||id%100==9||id<200||id>=900){
         data.toggle=-1
       }
@@ -334,44 +352,57 @@ addLayer("ma", {
     getTitle(data,id){
       return data.contents
     },
-    getDisplay(data,id){
-      if (id%100==1||id%100==9||id<200||id>=900){
-
-      }else{
-      }
-    
-    },
+    getDisplay(data,id){},
     onClick(data,id){
       if ((id%100==1||id%100==9||id<200||id>900)){
         let toggle=data.toggle
-        if(id<200   ){for (l=101;l<=109;l++   ){getGridData("ma",l).toggle=-1}}
-        if(id>900   ){for (l=901;l<=909;l++   ){getGridData("ma",l).toggle=-1}}
-        if(id%100==1){for (l=101;l<=901;l+=100){getGridData("ma",l).toggle=-1}}
-        if(id%100==9){for (l=109;l<=909;l+=100){getGridData("ma",l).toggle=-1}}
+        if(id<200   ){for (l=101;l<=109;l++   ){getGridData("ma",l).toggle=-1} cr_updatesprite(l+100)}
+        if(id>900   ){for (l=901;l<=909;l++   ){getGridData("ma",l).toggle=-1} cr_updatesprite(l-100)}
+        if(id%100==1){for (l=101;l<=901;l+=100){getGridData("ma",l).toggle=-1} cr_updatesprite(l+1)}
+        if(id%100==9){for (l=109;l<=909;l+=100){getGridData("ma",l).toggle=-1} cr_updatesprite(l-1)}
         data.toggle=!toggle
-        return
-      }
-      if (player.cr.selected){
+      }else if (player.cr.selected){
         if (Math.floor(cr_data.nameid[player.cr.selected]/100)==3){
           data.contents=player.cr.selected
         }
       }else{
         data.contents=""
       }
+      for (ox=-1;ox<=1;ox+=2){
+        cr_updatesprite(id+ox)
+      }
+      for (oy=-1;oy<=1;oy+=2){
+        cr_updatesprite(id+oy*100)
+      }
+      cr_updatesprite(id)
     },
     getStyle(data,id){
       let style = {
         "background-color": (id%100+(Math.floor(id/100)))%2==1?"#36d106":"#87fa23",
         "border-radius": `${id==202?"20px":"0px"} ${id==208?"20px":"0px"} ${id==808?"20px":"0px"} ${id==802?"20px":"0px"}`,
-        "background-image": "url( \"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 200'%3E%3Cpath d='M10 10h123v123H10z'/%3E%3C/svg%3E\" )"
+        "background-size": "auto 200%",
+        //"image-rendering": "pixelated",
+        "background-image": "url(./blank.png)",
       }
-      if (id%100==1||id%100==9){
+      let lrside=id%100==1||id%100==9
+      let tbside=id<200||id>=900
+      if (lrside){
         style.width="20px"
-        style["background-color"]=data.toggle===-1?"#222222":(data.toggle?"#eb7d34":"#3496eb")
       }
-      if (id<200||id>=900){
+      if (tbside){
         style.height="20px"
+      }
+      if(tbside||lrside){
         style["background-color"]=data.toggle===-1?"#222222":(data.toggle?"#eb7d34":"#3496eb")
+      }else{
+        if (data.contents=="responsive dust"){
+          style["background-image"]='url("./wire_base_E.png")'
+          let pos=`${-data.wire_sprite*200}% 50%`
+          style["background-position"]=pos
+        }
+      }
+      if(tbside&&lrside){
+        style.display="none"
       }
       return style
     }
