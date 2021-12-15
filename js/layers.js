@@ -334,6 +334,13 @@ addLayer("ma", {
     getTitle(data,id){
       return data.contents
     },
+    getDisplay(data,id){
+      if (id%100==1||id%100==9||id<200||id>=900){
+
+      }else{
+      }
+    
+    },
     onClick(data,id){
       if ((id%100==1||id%100==9||id<200||id>900)){
         let toggle=data.toggle
@@ -342,6 +349,7 @@ addLayer("ma", {
         if(id%100==1){for (l=101;l<=901;l+=100){getGridData("ma",l).toggle=-1}}
         if(id%100==9){for (l=109;l<=909;l+=100){getGridData("ma",l).toggle=-1}}
         data.toggle=!toggle
+        return
       }
       if (player.cr.selected){
         if (Math.floor(cr_data.nameid[player.cr.selected]/100)==3){
@@ -355,13 +363,14 @@ addLayer("ma", {
       let style = {
         "background-color": (id%100+(Math.floor(id/100)))%2==1?"#36d106":"#87fa23",
         "border-radius": `${id==202?"20px":"0px"} ${id==208?"20px":"0px"} ${id==808?"20px":"0px"} ${id==802?"20px":"0px"}`,
+        "background-image": "url( \"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 200'%3E%3Cpath d='M10 10h123v123H10z'/%3E%3C/svg%3E\" )"
       }
       if (id%100==1||id%100==9){
-        style.width="10%"
+        style.width="20px"
         style["background-color"]=data.toggle===-1?"#222222":(data.toggle?"#eb7d34":"#3496eb")
       }
       if (id<200||id>=900){
-        style.height="10%"
+        style.height="20px"
         style["background-color"]=data.toggle===-1?"#222222":(data.toggle?"#eb7d34":"#3496eb")
       }
       return style
