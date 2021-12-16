@@ -12,7 +12,7 @@ function cr_updatesprite(id){
   for (l=0;l<=3;l++){
     let o=cr_orderofchecks[l]
     let data=getGridData("ma",id+o.x+o.y*100)
-    spr+=data.contents!==""||data.toggle!==-1?2**(l):0
+    spr+=data.contents!==""||data.state>0?2**(l):0
   }
   getGridData("ma",id).wire_sprite=spr
   setGridData("ma",id,getGridData("ma",id))
@@ -35,7 +35,7 @@ function cr_updatesprite(id){
       (maindata.contents!=="responsive dust")||
       (maindata.contents=="responsive dust"&&data.contents!=="responsive dust")
     ){
-      spr+=data.contents!==""||data.toggle!==-1?2**(l):0
+      spr+=data.contents!==""||(0+data.state>0)?2**(l):0
     }
   }
   getGridData("ma",id).wire_sprite=spr
@@ -43,6 +43,32 @@ function cr_updatesprite(id){
 }
 }
 
+function ma_r(v){
+  return Math.floor((Math.random()*2-1)*v)
+}
+
+ma_puzzledata={
+  11: {
+    //set to 1
+    inputs: [0,94,-12,42],//get pushed to all free wires with a blue io port next to them. (order goes up left right bottom)
+    outputs: [1,1,1,1],//get pulled to fromm all wires with an orange io port next to them. (order goes up left right bottom)
+    randomized_test(){
+      return {i:[ma_r(99)],o:[1]}
+    },
+    tests_required: 104//includes deterministic outputs
+  },
+  12: {
+    name: "add",
+    inputs: [4,90,-8,4,4,-8],
+    outputs: [94,-4,-4],
+    randomized_test(){
+      let a=ma_r(99)
+      let b=ma_r(99)
+      return {i:[a,b],o:[a+b]}
+    },
+    tests_required: 104
+  }
+}
 
 addLayer("ma", {
   name: "machine design",
@@ -257,7 +283,7 @@ addLayer("ma", {
       */
       let data={contents:txt,wire_sprite:1,held_signal:null}
       if (id%100==1||id%100==9||id<200||id>=900){
-        data.toggle=-1
+        data.state=0
       }
       return data
     },
@@ -268,18 +294,12 @@ addLayer("ma", {
       if (player.subtabs.ma.mainTabs=="designer"){
         
         if ((id%100==1||id%100==9||id<200||id>900)){
-          let toggle=data.toggle
-          data.toggle=!toggle
-          if(id<200   ){for (let l=101;l<=109;l++    ){getGridData("ma",l).toggle=-1;}}
-          if(id>900   ){for (let l=901;l<=909;l++    ){getGridData("ma",l).toggle=-1;}}
-          if(id%100==1){for (let l=101;l<=901;l=l+100){getGridData("ma",l).toggle=-1;}}
-          if(id%100==9){for (let l=109;l<=909;l=l+100){getGridData("ma",l).toggle=-1;}}
+          data.state=((data.state||0)+1)%3
           for(lx=2;lx<=8;lx++){
             for(ly=200;ly<=800;ly+=100){
               cr_updatesprite(lx+ly)
             }
           }
-          data.toggle=!toggle
         }else if (player.cr.selected){
           if (Math.floor(cr_data.nameid[player.cr.selected]/100)==3){
             data.contents=player.cr.selected
@@ -310,13 +330,13 @@ addLayer("ma", {
         "background-size": "auto 100%",
         //"image-rendering": "pixelated",
         "background-image": "url(./blank.png)",
-        "transition": "all .5s, background-position 0ms, background-size 0ms",
-        "-webkit-text-stroke-width": "1px",
+        "transition": "all .5s, background-position 0ms, background-size 0ms, -webkit-text-stroke-width 2s",
+        "-webkit-text-stroke-width": player.subtabs.ma.mainTabs!=="designer"?"0px":"1px",
         "-webkit-text-stroke-color": "black",
         "font-size": "20px",
-        "font-family": "'PicoFont'",
-        "color": player.subtabs.ma.mainTabs=="designer"?
-        ((id%100+(Math.floor(id/100)))%2==1?"#112ed1":"#1751e3"):
+        "font-weight": "bold",
+        "color": player.subtabs.ma.mainTabs!=="designer"?
+        ((id%100+(Math.floor(id/100)))%2==0?"#112ed1":"#1751e3"):
         "#00000000"
       }
       if (player.subtabs.ma.mainTabs=="designer"){
@@ -331,7 +351,7 @@ addLayer("ma", {
         style.height="20px"
       }
       if(tbside||lrside){
-        style["background-color"]=data.toggle===-1?"#222222":(data.toggle?"#eb7d34":"#3496eb")
+        style["background-color"]=data.state==0?"#222222":(data.state==2?"#eb7d34":"#3496eb")
       }else{
         if (data.contents=="responsive cable"){
           style["background-image"]='url("./wire_E.png")'
