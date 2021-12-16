@@ -81,3 +81,8 @@
 .hl {
 	border-top: 3px solid var(--color);
 }
+
+@font-face {
+  font-family: "PicoFont";
+  src: url("https://github.com/chipsams/The-Modding-Tree/blob/master/PICO-8%20mono.ttf?raw=true");
+  }

@@ -314,7 +314,7 @@ addLayer("ma", {
         "-webkit-text-stroke-width": "1px",
         "-webkit-text-stroke-color": "black",
         "font-size": "20px",
-        "font-family": "monospace",
+        "font-family": "'PicoFont'",
         "color": player.subtabs.ma.mainTabs=="designer"?
         ((id%100+(Math.floor(id/100)))%2==1?"#112ed1":"#1751e3"):
         "#00000000"
