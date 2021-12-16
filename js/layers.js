@@ -331,24 +331,142 @@ let data={
     layerShown(){return true}
 }
 
+sigamount=0
 
 addLayer("cr", data)
 
 addLayer("ma", {
-  name: "machining",
+  name: "machine design",
   symbol: "MA",
-  startData() { return {points: new Decimal(0),}},
+  startData() {
+    return {
+      points: new Decimal(0),
+      ticklength: .5,
+      simtime: 0, //time incemented in the update loop by diff, will almost never be above ticklength
+    }
+  },
   type: "none",
   color: "#DBC046",
+  bars: {
+    tick: {
+        direction: RIGHT,
+        width: 500,
+        height: 25,
+        instant:true,
+        progress() {return player.ma.simtime/player.ma.ticklength},
+    },
+  },
+  update: function(diff){
+    player.ma.ticklength=1/10
+    player.ma.simtime+=diff
+    for (;player.ma.simtime>player.ma.ticklength;player.ma.simtime-=player.ma.ticklength){
+      let updates={}
+      let update = function(pos,signal){
+        if (signal==null){updates[pos]=null; return true}
+        if (updates[pos] && updates[pos]!==null){
+          if (updates[pos].value<signal.value){
+            updates[pos]=signal
+            return true
+          }
+        }else{
+          updates[pos]=signal
+          return true
+        }
+        return false
+      }
+      for(ly=200;ly<=800;ly+=100){
+        for(lx=2;lx<=8;lx++){
+          if (player.subtabs.ma.mainTabs!=="designer"){
+            let data=getGridData("ma",lx+ly)
+            switch (data.contents){
+              case "logic slate":
+                let detected=[]
+                for (l=0;l<=3;l++){
+                  let o=cr_orderofchecks[l]
+                  let pos=lx+ly+o.x+o.y*100
+                  let targdata=getGridData("ma",pos)
+                  if (targdata.held_signal!==null){
+                    if (""+targdata.held_signal.prevpos!==""+(lx+ly)){
+                      detected.push({pos:pos,signal:targdata.held_signal,ox:o.x,oy:o.y})
+                    }
+                  }
+                }
+                if (detected.length==2){
+                  //if its of the form
+                  // V
+                  //<#>
+                  // ^
+                  if (detected[0].ox==detected[1].ox||detected[0].oy==detected[1].oy){
+                    console.log("form |")
+                    for (l=0;l<=1;l++){
+                      let det=detected[l]
+                      let newpos=lx+ly+det.oy+det.ox*100
+                      updates[det.pos]=null
+                      let a=detected[0].signal.value>0
+                      let b=detected[1].signal.value>0
+                      update(newpos,{
+                        value:(!(a&&b))?100:0,
+                        pos:lx+ly,
+                      })
+                    }
+                  }
+                  //if its of the form
+                  // V
+                  //>#>
+                  // V
+                  else{
+                    console.log("form L")
+                    for (l=0;l<=1;l++){
+                      let det=detected[l]
+                      let newpos=lx+ly+det.oy+det.ox*100
+                      update(detected[l].pos,null)
+                      update(lx+ly-detected[l].ox-detected[l].oy*100,{
+                        value:detected[l].signal.value-detected[1-l].signal.value,
+                        pos: lx+ly,
+                      })
+                    }
+                  }
+                }
+              case "responsive cable":
+                if (data.held_signal!==null){
+                  //data.held_signal.value+=1
+                  let moved=false
+                  for (l=0;l<=3;l++){
+                    let o=cr_orderofchecks[l]
+                    let pos=lx+ly+o.x+o.y*100
+                    let targdata=getGridData("ma",pos)
+                    if (targdata.held_signal==null && targdata.contents=="responsive cable"){
+                      if(""+pos!==""+data.held_signal.prevpos){
+                        moved=update(pos,data.held_signal)||moved
+                      }
+                    }
+                  }
+                  if (moved) {update(lx+ly,null)}
+                }
+            }
+          }
+        }
+      }
+      for (const [pos, signal] of Object.entries(updates)) {
+        if (signal===null){
+          getGridData("ma",pos).held_signal=null
+        }else if (getGridData("ma",pos).contents=="responsive cable"){
+          getGridData("ma",pos).held_signal={value:signal.value,prevpos:signal.pos,pos:pos}
+        }
+      }
+    }
+  },
   grid: {
     rows:9,
     cols:9,
     getStartData(){
+      
       txt=""
       //held signal format
       /*
         {
           value: (regular number),
+          pos: (id (202, e.g))
           prevpos: (id (202, e.g), will move if there is a free wire that isn't prevpos)
         }
         conflicts in movement are resolved by sending the biggest number first. (negating everything therefore could be used to send the minimum)
@@ -362,9 +480,11 @@ addLayer("ma", {
       return data
     },
     getTitle(data,id){
-      return ""
+      return data.held_signal!==null?data.held_signal.value:""
     },
-    getDisplay(data,id){},
+    getDisplay(data,id){
+      return data.held_signal!==null?data.held_signal.prevpos+","+data.held_signal.pos:""
+    },
     onClick(data,id){
       if (player.subtabs.ma.mainTabs=="designer"){
         
@@ -394,18 +514,27 @@ addLayer("ma", {
         for (oy=-1;oy<=1;oy+=2){
           cr_updatesprite(id+oy*100)
         }
+      }else{
+        if (data.held_signal===null){
+          data.held_signal={value:sigamount,prevpos:101,pos:id}
+        }else{
+          data.held_signal=null
+        }
       }
       cr_updatesprite(id)
     },
     getStyle(data,id){
       let style = {
-        "background-color": (id%100+(Math.floor(id/100)))%2==1?"#36d106":"#87fa23",
+        "background-color": (id%100+(Math.floor(id/100)))%2==1?"#112ed1":"#1751e3",
         "border-radius": `${id==202?"10px":"0px"} ${id==208?"10px":"0px"} ${id==808?"10px":"0px"} ${id==802?"10px":"0px"}`,
         "border": "none",
         "background-size": "auto 100%",
         //"image-rendering": "pixelated",
         "background-image": "url(./blank.png)",
-        "transition": "background-position 0s"
+        "transition": "all .5s, background-position 0s"
+      }
+      if (player.subtabs.ma.mainTabs=="designer"){
+        style["background-color"]=(id%100+(Math.floor(id/100)))%2==1?"#36d106":"#87fa23"
       }
       let lrside=id%100==1||id%100==9
       let tbside=id<200||id>=900
@@ -438,6 +567,11 @@ addLayer("ma", {
 
         }
       }
+      if (player.subtabs.ma.mainTabs=="designer"){
+        style["color"]="#00000000"
+      }else{
+        style["color"]="#000000ff"
+      }
       if(tbside&&lrside){
         style.display="none"
       }
@@ -453,7 +587,8 @@ addLayer("ma", {
     },
     simulator: {
       content:[
-        "grid"
+        "grid",
+        ["bar",["tick"]]
       ]
     }
   }
