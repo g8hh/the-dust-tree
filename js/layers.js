@@ -19,8 +19,9 @@ cr_data={
     300:[
       {name:"responsive dust",c:"#DBC046"},
       {name:"responsive cable",c:"#DBC046"},
-      {name:"signal slate",c:"#DBC046"},
       {name:"logic slate",c:"#DBC046"},
+      {name:"cross slate",c:"#DBC046"},
+      {name:"togglable slate",c:"#DBC046"},
     ]
   },
   craft_data:{
@@ -35,8 +36,9 @@ cr_data={
     "engraved bricksCdust":[{a:1,r:"engraved bricks"},{a:1,r:"lively dust"},{a:1,r:"responsive dust"}],
     "lively dustCresponsive dust":[{a:1,r:"dust"}],
     "responsive dustCdust shard":[{a:1,r:"responsive cable"}],
-    "responsive dustCengraved bricks":[{a:1,r:"signal slate"}],
-    "responsive dustCsignal slate":[{a:1,r:"logic slate"}],
+    "responsive dustCengraved bricks":[{a:1,r:"cross slate"}],
+    "responsive dustCcross slate":[{a:1,r:"logic slate"}],
+    "engraved bricksCcross slate":[{a:1,r:"togglable slate"}],
   },
   nameid:{}
 }
@@ -378,9 +380,26 @@ addLayer("ma", {
         for(lx=2;lx<=8;lx++){
           if (player.subtabs.ma.mainTabs!=="designer"){
             let data=getGridData("ma",lx+ly)
+            let detected=[]
             switch (data.contents){
+              case "cross slate":
+                for (l=0;l<=3;l++){
+                  let o=cr_orderofchecks[l]
+                  let pos=lx+ly+o.x+o.y*100
+                  let targdata=getGridData("ma",pos)
+                  if (targdata.held_signal!==null){
+                    if (""+targdata.held_signal.prevpos!==""+(lx+ly)){
+                      detected.push({pos:pos,signal:targdata.held_signal,ox:o.x,oy:o.y})
+                    }
+                  }
+                }
+                for (l=0;l<detected.length;l++){
+                  let det=detected[l]
+                  let newpos=lx+ly-det.ox-det.oy*100
+                  update(newpos,det.signal)
+                }
+                break;
               case "logic slate":
-                let detected=[]
                 for (l=0;l<=3;l++){
                   let o=cr_orderofchecks[l]
                   let pos=lx+ly+o.x+o.y*100
@@ -426,7 +445,19 @@ addLayer("ma", {
                       })
                     }
                   }
+                }else if (detected.length>=3){
+                  let facx=0
+                  let facy=0
+                  for (l=0;l<=3;l++){
+                    let skip=false
+                    let o=cr_orderofchecks[l]
+                    let pos=lx+ly+o.x+o.y*100
+                    for (l=0;l<=2;l++){
+                      update(detected[l].pos,null)
+                    }
+                  }
                 }
+                break;
               case "responsive cable":
                 if (data.held_signal!==null){
                   //data.held_signal.value+=1
@@ -556,10 +587,14 @@ addLayer("ma", {
           let pos=`${-data.wire_sprite*100}% 50%`
           style["background-position"]=pos
           style["background-image"]='url("./responsive_dust_E.png")'
-        }else if (data.contents=="signal slate"){
+        }else if (data.contents=="cross slate"){
           let pos=`${-data.wire_sprite*100}% 50%`
           style["background-position"]=pos
-          style["background-image"]='url("./signal_slate_E.png")'
+          style["background-image"]='url("./cross_slate_E.png")'
+        }else if (data.contents=="togglable slate"){
+          let pos=`${-data.wire_sprite*100}% 50%`
+          style["background-position"]=pos
+          style["background-image"]='url("./togglable_slate_E.png")'
         }else if (data.contents=="logic slate"){
           let pos=`${-data.wire_sprite*100}% 50%`
           style["background-position"]=pos
