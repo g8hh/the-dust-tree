@@ -1,3 +1,72 @@
+//component classes
+class MA_component {
+  constructor(pos){
+    this.pos={x:pos%100-1,y:Math.floor(pos/100)-1}
+    this.component_type=""
+    this.outbox=[]//all values going out, arranged in the standard 0-3 direction style.
+  }
+  rotate(dir,rot){
+    return (dir+rot)%4
+  }
+  pull(dir) {
+    dir=this.rotate(dir,2)
+    let value=this.outbox[dir]
+    delete this.outbox[dir]
+    return value
+  }
+  peek(dir) {
+    dir=this.rotate(dir,2)
+    let value=this.outbox[dir]
+    return value
+  }
+  neighbor(dir) {
+    let o=cr_orderofchecks[dir]
+    return ma_getcomponent(this.pos.x+o.x,this.pos.y+o.y)
+  }
+  ready_neigbors() {
+    let ready=0
+    for (l=0;l<=3;l++){
+      if(this.neighbor(l).peek(l))ready+=1
+    }
+    return ready
+  }
+  biggest_neigbor() {
+    let lastvalue=-Infinity
+    let dir
+    for (l=0;l<=3;l++){
+      let neighbor_val=this.neighbor(l).peek(l)
+      if(neighbor_val){
+        if (neighbor_val>lastvalue){
+          lastvalue=neighbor_val
+          dir=l
+        }
+      }
+    }
+  }
+  process() {}
+}
+
+class MA_responsive_cable extends MA_component {
+  constructor(pos){
+    super(pos)
+    this.component_type="responsive cable"
+  }
+  title() {
+    return "yeah"
+  }
+  process() {
+    if (this.ready_neigbors()>1){
+      let biggest=this.biggest_neigbor()
+      this.heldvalue=this.neighbor(biggest).pull(biggest)
+      for (l=0;l<=3;l++){
+        if (this.neighbor(l).component_type=="" && l!==biggest){
+          this.outbox[l]=this.heldvalue
+        }
+      }
+    }
+  }
+}
+
 {
 //updates the connected wire sprites
 cr_orderofchecks=[
@@ -19,10 +88,10 @@ function cr_updatesprite(id){
 }
 //updates the connected wire sprites
 cr_orderofchecks=[
-  {x: 1,y: 0},
-  {x: 0,y: 1},
-  {x:-1,y: 0},
-  {x: 0,y:-1}
+  {x: 1,y: 0,c:">"},
+  {x: 0,y: 1,c:"v"},
+  {x:-1,y: 0,c:"<"},
+  {x: 0,y:-1,c:"^"}
 ]
 function cr_updatesprite(id){
   if(id%100<=1||id%100>=9||id<200||id>900){return}
@@ -70,6 +139,28 @@ ma_puzzledata={
   }
 }
 
+function ma_getcomponent(x,y){
+  return getGridData("ma",x+y*100+101)
+}
+function ma_updatetile(id,type){
+  console.log(type)
+  if (!(id%100==1||id%100==9||id<200||id>900)){
+    switch (type){
+      case "responsive cable":
+        console.log("new cable!")
+        let component=new MA_responsive_cable(id)
+        console.log(component.component_type)
+        setGridData("ma",id,component)
+      default:
+        setGridData("ma",id,new MA_component(id))
+    }
+  }
+}
+
+
+
+
+
 addLayer("ma", {
   name: "machine design",
   symbol: "MA",
@@ -113,63 +204,7 @@ addLayer("ma", {
         return false
       }
       if (player.subtabs.ma.mainTabs!=="designer"){
-        //calculate push values
-        for(ly=200;ly<=800;ly+=100){
-          for(lx=2;lx<=8;lx++){
-            let data=getGridData("ma",lx+ly)
-            data.newpush=[]
-            //calculate the push values
-            switch (data.contents){
-              case "responsive dust":
-                data.newpush=[1,1,1,1]//push 1s on all directions.
-                break
-              case "responsive cable":
-                for (l=0;l<=3;l++){
-                  if(data.held_signal!==null && !data.pulleddirs[l]){
-                    data.newpush[l]={value:data.held_signal}
-                  }
-                }
-                break
-            }
-          }
-        }
-        for(ly=200;ly<=800;ly+=100){
-          for(lx=2;lx<=8;lx++){
-            let data=getGridData("ma",lx+ly)
-            data.pushing=data.newpush
-          }
-        }
-        //make everything pull in values (if it does)
-        for(ly=200;ly<=800;ly+=100){
-          for(lx=2;lx<=8;lx++){
-            let data=getGridData("ma",lx+ly)
-            inputs=[]
-            for (l=0;l<=3;l++){
-              let o=cr_orderofchecks[l]
-              let pos=lx+ly+o.x+o.y*100
-              let dataat=getGridData("ma",pos)
-              let v=dataat.pushing[(l+2)%4]
-              if (v!==null){
-                inputs.push(
-                  {value:v,dir:l}
-                )
-              }
-            }
-            switch (data.contents){
-              case "responsive cable":
-                if (inputs.length>0){
-                  console.log(data.held_signal)
-                  data.held_signal=inputs[0].value
-                  data.pulleddirs={}
-                  for (l=0;l<inputs.length;l++){
-                    data.pulleddirs[inputs[l].dir]=true
-                    data.held_signal=Math.max(data.held_signal,inputs[l].value)
-                  }
-                  console.log(data.held_signal)
-                }
-            }
-          }
-        }
+
       }
       //previous update loop
       if(false){
@@ -346,51 +381,32 @@ addLayer("ma", {
   grid: {
     rows:9,
     cols:9,
-    getStartData(){
-      
-      txt=""
-      //held signal format
-      /*
-        {
-          value: (regular number),
-          pos: (id (202, e.g))
-          prevpos: (id (202, e.g), will move if there is a free wire that isn't prevpos)
-        }
-        conflicts in movement are resolved by sending the biggest number first. (negating everything therefore could be used to send the minimum)
-        addition =a-(0-b)
-        
-      */
-      let data={
-        contents:txt,
-        wire_sprite:1,
-        held_signal:null,
-        pushing:[],
-        pulleddirs:{}
-      }
+    getStartData(id){
       if (id%100==1||id%100==9||id<200||id>=900){
-        data.state=0
+        return 0
+      }else{
+        return new MA_component(id)
       }
-      return data
     },
     getTitle(data,id){
-      return data.held_signal
+      return data.title?data.title():"?"
     },
     onClick(data,id){
       if (player.subtabs.ma.mainTabs=="designer"){
         
         if ((id%100==1||id%100==9||id<200||id>900)){
-          data.state=((data.state||0)+1)%3
+          data=(data+1)%3
           for(lx=2;lx<=8;lx++){
             for(ly=200;ly<=800;ly+=100){
               cr_updatesprite(lx+ly)
             }
           }
-        }else if (player.cr.selected){
-          if (Math.floor(cr_data.nameid[player.cr.selected]/100)==3){
-            data.contents=player.cr.selected
-          }
         }else{
-          data.contents=""
+          if (player.cr.selected){
+            ma_updatetile(id,player.cr.selected)
+          }else{
+            ma_updatetile(id,"")
+          }
         }
         for (ox=-1;ox<=1;ox+=2){
           cr_updatesprite(id+ox)
@@ -400,9 +416,13 @@ addLayer("ma", {
         }
       }else{
         if (data.held_signal===null){
-          data.held_signal=sigamount
+          for (l=0;l<=3;l++){
+            data.outbox=sigamount
+            data.pulleddirs={}
+          }
         }else{
-          data.held_signal=null
+          data.outbox=[]
+          data.pulleddirs={}
         }
       }
       cr_updatesprite(id)
@@ -438,25 +458,25 @@ addLayer("ma", {
       if(tbside||lrside){
         style["background-color"]=data.state==0?"#222222":(data.state==2?"#eb7d34":"#3496eb")
       }else{
-        if (data.contents=="responsive cable"){
-          style["background-image"]='url("./wire_E.png")'
+        if (data.component_type=="responsive cable"){
+          console.log("wire")
           let pos=`${-data.wire_sprite*100}% 50%`
           style["background-image"]='url("./wire_E.png")'
           style["background-position"]=pos
-        }else if (data.contents=="responsive dust"){
+        }else if (data.component_type=="responsive dust"){
           let pos=`${-data.wire_sprite*100}% 50%`
           style["background-position"]=pos
           style["background-image"]='url("./responsive_dust_E.png")'
-        }else if (data.contents=="cross slate"){
+        }else if (data.component_type=="cross slate"){
           let pos=`${-data.wire_sprite*100}% 50%`
           style["background-position"]=pos
           style["background-image"]='url("./cross_slate_E.png")'
-        }else if (data.contents=="togglable slate"){
+        }else if (data.component_type=="togglable slate"){
           style["background-size"]="auto 200%"
           let pos=`${-data.wire_sprite*100}% 00%`
           style["background-position"]=pos
           style["background-image"]='url("./togglable_slate_E.png")'
-        }else if (data.contents=="logic slate"){
+        }else if (data.component_type=="logic slate"){
           let pos=`${-data.wire_sprite*100}% 50%`
           style["background-position"]=pos
           style["background-image"]='url("./logic_slate_E.png")'
