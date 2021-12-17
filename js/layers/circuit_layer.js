@@ -112,129 +112,208 @@ addLayer("ma", {
         }
         return false
       }
-      let search=function(pos,o){
-        
-      }
-      for(ly=200;ly<=800;ly+=100){
-        for(lx=2;lx<=8;lx++){
-          if (player.subtabs.ma.mainTabs!=="designer"){
+      if (player.subtabs.ma.mainTabs!=="designer"){
+        //calculate push values
+        for(ly=200;ly<=800;ly+=100){
+          for(lx=2;lx<=8;lx++){
             let data=getGridData("ma",lx+ly)
-            let detected=[]
+            data.newpush=[]
+            //calculate the push values
             switch (data.contents){
               case "responsive dust":
+                data.newpush=[1,1,1,1]//push 1s on all directions.
+                break
+              case "responsive cable":
                 for (l=0;l<=3;l++){
-                  let o=cr_orderofchecks[l]
-                  let pos=lx+ly+o.x+o.y*100
-                  update(pos,{pos:pos,value:1})
+                  if(data.held_signal!==null && !data.pulleddirs[l]){
+                    data.newpush[l]={value:data.held_signal}
+                  }
                 }
                 break
-              case "cross slate":
-                for (l=0;l<=3;l++){
-                  let o=cr_orderofchecks[l]
-                  let pos=lx+ly+o.x+o.y*100
-                  let targdata=getGridData("ma",pos)
-                  if (targdata.held_signal!==null){
-                    if (""+targdata.held_signal.prevpos!==""+(lx+ly)){
-                      detected.push({pos:pos,signal:targdata.held_signal,ox:o.x,oy:o.y})
-                    }
-                  }
-                }
-                for (l=0;l<detected.length;l++){
-                  let det=detected[l]
-                  
-                  let searchdist=1
-                  while (searchdist<=7) {
-                    let newpos=lx+ly-det.ox*searchdist-det.oy*100*searchdist
-                    if (getGridData("ma",newpos).contents=="responsive cable"){
-                      if (getGridData("ma",newpos).held_signal===null){
-                        update(det.pos,null)
-                        update(newpos,{
-                          value:det.signal.value,
-                          pos:lx+ly-det.ox*(searchdist-1)-det.oy*100*(searchdist-1)
-                        })
-                      }
-                      break
-                    }else if (getGridData("ma",newpos).contents=="cross slate"){
-                      searchdist+=1
-                    }else{
-                      break
-                    }
-                  }
-                }
-                break;
-              case "logic slate":
-                for (l=0;l<=3;l++){
-                  let o=cr_orderofchecks[l]
-                  let pos=lx+ly+o.x+o.y*100
-                  let targdata=getGridData("ma",pos)
-                  if (targdata.held_signal!==null){
-                    if (""+targdata.held_signal.prevpos!==""+(lx+ly)){
-                      detected.push({pos:pos,signal:targdata.held_signal,ox:o.x,oy:o.y})
-                    }
-                  }
-                }
-                if (detected.length==2){
-                  //if its of the form
-                  // V
-                  //<#>
-                  // ^
-                  if (detected[0].ox==detected[1].ox||detected[0].oy==detected[1].oy){
-                    for (l=0;l<=1;l++){
-                      let det=detected[l]
-                      let newpos=lx+ly+det.oy+det.ox*100
-                      updates[det.pos]=null
-                      let a=detected[0].signal.value>0
-                      let b=detected[1].signal.value>0
-                      update(newpos,{
-                        value:(!(a&&b))?100:0,
-                        pos:lx+ly,
-                      })
-                    }
-                  }
-                  //if its of the form
-                  // V
-                  //>#>
-                  // V
-                  else{
-                    for (l=0;l<=1;l++){
-                      let det=detected[l]
-                      let newpos=lx+ly+det.oy+det.ox*100
-                      update(detected[l].pos,null)
-                      update(lx+ly-detected[l].ox-detected[l].oy*100,{
-                        value:detected[l].signal.value-detected[1-l].signal.value,
-                        pos: lx+ly,
-                      })
-                    }
-                  }
-                }else if (detected.length>=3){
-                  let facx=0
-                  let facy=0
-                  for (l=0;l<=3;l++){
-                    let skip=false
-                    let o=cr_orderofchecks[l]
-                    let pos=lx+ly+o.x+o.y*100
-                    for (l=0;l<detected.length;l++){
-                      update(detected[l].pos,null)
-                    }
-                  }
-                }
-                break;
+            }
+          }
+        }
+        for(ly=200;ly<=800;ly+=100){
+          for(lx=2;lx<=8;lx++){
+            let data=getGridData("ma",lx+ly)
+            data.pushing=data.newpush
+          }
+        }
+        //make everything pull in values (if it does)
+        for(ly=200;ly<=800;ly+=100){
+          for(lx=2;lx<=8;lx++){
+            let data=getGridData("ma",lx+ly)
+            inputs=[]
+            for (l=0;l<=3;l++){
+              let o=cr_orderofchecks[l]
+              let pos=lx+ly+o.x+o.y*100
+              let dataat=getGridData("ma",pos)
+              let v=dataat.pushing[(l+2)%4]
+              if (v!==null){
+                inputs.push(
+                  {value:v,dir:l}
+                )
+              }
+            }
+            switch (data.contents){
               case "responsive cable":
-                if (data.held_signal!==null){
-                  //data.held_signal.value+=1
-                  let moved=false
+                if (inputs.length>0){
+                  console.log(data.held_signal)
+                  data.held_signal=inputs[0].value
+                  data.pulleddirs={}
+                  for (l=0;l<inputs.length;l++){
+                    data.pulleddirs[inputs[l].dir]=true
+                    data.held_signal=Math.max(data.held_signal,inputs[l].value)
+                  }
+                  console.log(data.held_signal)
+                }
+            }
+          }
+        }
+      }
+      //previous update loop
+      if(false){
+        for(ly=200;ly<=800;ly+=100){
+          for(lx=2;lx<=8;lx++){
+            if (player.subtabs.ma.mainTabs!=="designer"){
+              let data=getGridData("ma",lx+ly)
+              let detected=[]
+              switch (data.contents){
+                case "responsive dust":
+                  break
+                case "cross slate":
                   for (l=0;l<=3;l++){
                     let o=cr_orderofchecks[l]
                     let pos=lx+ly+o.x+o.y*100
                     let targdata=getGridData("ma",pos)
-                    if (targdata.held_signal==null && targdata.contents=="responsive cable"){
-                      if(""+pos!==""+data.held_signal.prevpos){
-                        moved=update(pos,data.held_signal)||moved
+                    if (targdata.held_signal!==null){
+                      if (""+targdata.held_signal.prevpos!==""+(lx+ly)){
+                        detected.push({pos:pos,signal:targdata.held_signal,ox:o.x,oy:o.y})
                       }
                     }
                   }
-                  if (moved) {update(lx+ly,null)}
-                }
+                  for (l=0;l<detected.length;l++){
+                    let det=detected[l]
+                    
+                    let searchdist=1
+                    while (searchdist<=7) {
+                      let newpos=lx+ly-det.ox*searchdist-det.oy*100*searchdist
+                      if (getGridData("ma",newpos).contents=="responsive cable"){
+                        if (getGridData("ma",newpos).held_signal===null){
+                          update(det.pos,null)
+                          update(newpos,{
+                            value:det.signal.value,
+                            pos:lx+ly-det.ox*(searchdist-1)-det.oy*100*(searchdist-1)
+                          })
+                        }
+                        break
+                      }else if (getGridData("ma",newpos).contents=="cross slate"){
+                        searchdist+=1
+                      }else{
+                        break
+                      }
+                    }
+                  }
+                  break;
+                case "togglable slate":
+                  for (l=0;l<=3;l++){
+                    let o=cr_orderofchecks[l]
+                    let pos=lx+ly+o.x+o.y*100
+                    let targdata=getGridData("ma",pos)
+                    if (targdata.held_signal!==null){
+                      if (""+targdata.held_signal.prevpos!==""+(lx+ly)){
+                        detected.push({pos:pos,signal:targdata.held_signal,ox:o.x,oy:o.y})
+                      }
+                    }
+                  }
+                  if (detected.length==2){
+                    //if its of the form
+                    // V
+                    //<#>
+                    // ^
+                    if (detected[0].ox==detected[1].ox||detected[0].oy==detected[1].oy){}
+                    //if its of the form
+                    // V
+                    //>#>
+                    // V
+                    else{
+                      for (l=0;l<=1;l++){
+                        let det=detected[l]
+                        let newpos=lx+ly+det.oy+det.ox*100
+                        update(detected[l].pos,null)
+                        if (detected[1-l].signal.value>0){
+                          update(lx+ly-detected[l].ox-detected[l].oy*100,{
+                            value:detected[l].signal.value,
+                            pos: lx+ly,
+                          })
+                        }
+                      }
+                    }
+                  }
+                  break;
+                case "logic slate":
+                  for (l=0;l<=3;l++){
+                    let o=cr_orderofchecks[l]
+                    let pos=lx+ly+o.x+o.y*100
+                    let targdata=getGridData("ma",pos)
+                    if (targdata.held_signal!==null){
+                      if (""+targdata.held_signal.prevpos!==""+(lx+ly)){
+                        detected.push({pos:pos,signal:targdata.held_signal,ox:o.x,oy:o.y})
+                      }
+                    }
+                  }
+                  if (detected.length==2){
+                    //if its of the form
+                    // V
+                    //<#>
+                    // ^
+                    if (detected[0].ox==detected[1].ox||detected[0].oy==detected[1].oy){
+                      for (l=0;l<=1;l++){
+                        let det=detected[l]
+                        let newpos=lx+ly+det.oy+det.ox*100
+                        updates[det.pos]=null
+                        let a=detected[0].signal.value>0
+                        let b=detected[1].signal.value>0
+                        update(newpos,{
+                          value:(!(a&&b))?1:0,
+                          pos:lx+ly,
+                        })
+                      }
+                    }
+                    //if its of the form
+                    // V
+                    //>#>
+                    // V
+                    else{
+                      for (l=0;l<=1;l++){
+                        let det=detected[l]
+                        let newpos=lx+ly+det.oy+det.ox*100
+                        update(detected[l].pos,null)
+                        update(lx+ly-detected[l].ox-detected[l].oy*100,{
+                          value:detected[l].signal.value-detected[1-l].signal.value,
+                          pos: lx+ly,
+                        })
+                      }
+                    }
+                  }
+                  break;
+                case "responsive cable":
+                  if (data.held_signal!==null){
+                    //data.held_signal.value+=1
+                    let moved=false
+                    for (l=0;l<=3;l++){
+                      let o=cr_orderofchecks[l]
+                      let pos=lx+ly+o.x+o.y*100
+                      let targdata=getGridData("ma",pos)
+                      if (targdata.held_signal==null && targdata.contents=="responsive cable"){
+                        if(""+pos!==""+data.held_signal.prevpos){
+                          moved=update(pos,data.held_signal)||moved
+                        }
+                      }
+                    }
+                    if (moved) {update(lx+ly,null)}
+                  }
+              }
             }
           }
         }
@@ -281,14 +360,20 @@ addLayer("ma", {
         addition =a-(0-b)
         
       */
-      let data={contents:txt,wire_sprite:1,held_signal:null}
+      let data={
+        contents:txt,
+        wire_sprite:1,
+        held_signal:null,
+        pushing:[],
+        pulleddirs:{}
+      }
       if (id%100==1||id%100==9||id<200||id>=900){
         data.state=0
       }
       return data
     },
     getTitle(data,id){
-      return data.held_signal!==null?data.held_signal.value:""
+      return data.held_signal
     },
     onClick(data,id){
       if (player.subtabs.ma.mainTabs=="designer"){
@@ -315,7 +400,7 @@ addLayer("ma", {
         }
       }else{
         if (data.held_signal===null){
-          data.held_signal={value:sigamount,prevpos:101,pos:id}
+          data.held_signal=sigamount
         }else{
           data.held_signal=null
         }
