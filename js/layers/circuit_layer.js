@@ -2,7 +2,6 @@
 class MA_component {
   constructor(pos){
     this.pos={x:pos%100-1,y:Math.floor(pos/100)-1}
-    this.component_type=""
     this.outbox=[]//all values going out, arranged in the standard 0-3 direction style.
   }
   rotate(dir,rot){
@@ -43,20 +42,47 @@ class MA_component {
       }
     }
   }
-  process() {}
+}
+
+class MA_null extends MA_component {
+  constructor(pos){
+    super(pos)
+    this.component_type=""
+  }
+  title() {
+    return "E"
+  }
+  process() {
+
+  }
+}
+
+class MA_cross_slate extends MA_component {
+  constructor(pos){
+    super(pos)
+    this.component_type="cross slate"
+  }
+  title() {
+    return "C"
+  }
+  process() {
+
+  }
 }
 
 class MA_responsive_cable extends MA_component {
   constructor(pos){
     super(pos)
+    console.log("created cable",pos)
     this.component_type="responsive cable"
   }
   title() {
-    return "yeah"
+    return "W"+this.heldvalue
   }
   process() {
     if (this.ready_neigbors()>1){
       let biggest=this.biggest_neigbor()
+      console.log(biggest)
       this.heldvalue=this.neighbor(biggest).pull(biggest)
       for (l=0;l<=3;l++){
         if (this.neighbor(l).component_type=="" && l!==biggest){
@@ -67,25 +93,6 @@ class MA_responsive_cable extends MA_component {
   }
 }
 
-{
-//updates the connected wire sprites
-cr_orderofchecks=[
-  {x: 1,y: 0},
-  {x: 0,y: 1},
-  {x:-1,y: 0},
-  {x: 0,y:-1}
-]
-function cr_updatesprite(id){
-  if(id%100<=1||id%100>=9||id<200||id>900){return}
-  let spr=0
-  for (l=0;l<=3;l++){
-    let o=cr_orderofchecks[l]
-    let data=getGridData("ma",id+o.x+o.y*100)
-    spr+=data.contents!==""||data.state>0?2**(l):0
-  }
-  getGridData("ma",id).wire_sprite=spr
-  setGridData("ma",id,getGridData("ma",id))
-}
 //updates the connected wire sprites
 cr_orderofchecks=[
   {x: 1,y: 0,c:">"},
@@ -93,6 +100,13 @@ cr_orderofchecks=[
   {x:-1,y: 0,c:"<"},
   {x: 0,y:-1,c:"^"}
 ]
+
+function refreshtile(layer,id){
+  let data=getGridData(layer,id)
+  setGridData(layer,id,data===false?true:false)//set it to a value it definitely isn't.
+  setGridData(layer,id,data)
+}
+
 function cr_updatesprite(id){
   if(id%100<=1||id%100>=9||id<200||id>900){return}
   let spr=0
@@ -101,15 +115,14 @@ function cr_updatesprite(id){
     let o=cr_orderofchecks[l]
     let data=getGridData("ma",id+o.x+o.y*100)
     if(
-      (maindata.contents!=="responsive dust")||
-      (maindata.contents=="responsive dust"&&data.contents!=="responsive dust")
+      (maindata.component_type!=="responsive dust")||
+      (maindata.component_type=="responsive dust"&&data.component_type!=="responsive dust")
     ){
-      spr+=data.contents!==""||(0+data.state>0)?2**(l):0
+      spr+=(data.component_type!==""||(0+data.state>0))?2**(l):0
     }
   }
   getGridData("ma",id).wire_sprite=spr
-  setGridData("ma",id,getGridData("ma",id))
-}
+  refreshtile("ma",id)
 }
 
 function ma_r(v){
@@ -143,16 +156,16 @@ function ma_getcomponent(x,y){
   return getGridData("ma",x+y*100+101)
 }
 function ma_updatetile(id,type){
-  console.log(type)
   if (!(id%100==1||id%100==9||id<200||id>900)){
     switch (type){
+      case "cross slate":
+        setGridData("ma",id,new MA_cross_slate(id))
+        break
       case "responsive cable":
-        console.log("new cable!")
-        let component=new MA_responsive_cable(id)
-        console.log(component.component_type)
-        setGridData("ma",id,component)
+        setGridData("ma",id,new MA_responsive_cable(id))
+        break
       default:
-        setGridData("ma",id,new MA_component(id))
+        setGridData("ma",id,new MA_null(id))
     }
   }
 }
@@ -204,7 +217,12 @@ addLayer("ma", {
         return false
       }
       if (player.subtabs.ma.mainTabs!=="designer"){
-
+        for(ly=1;ly<=7;ly++){
+          for(lx=1;lx<=7;lx++){
+            let c=ma_getcomponent(lx,ly)
+            c.process()
+          }
+        }
       }
       //previous update loop
       if(false){
@@ -385,7 +403,7 @@ addLayer("ma", {
       if (id%100==1||id%100==9||id<200||id>=900){
         return 0
       }else{
-        return new MA_component(id)
+        return new MA_null(id)
       }
     },
     getTitle(data,id){
@@ -408,12 +426,6 @@ addLayer("ma", {
             ma_updatetile(id,"")
           }
         }
-        for (ox=-1;ox<=1;ox+=2){
-          cr_updatesprite(id+ox)
-        }
-        for (oy=-1;oy<=1;oy+=2){
-          cr_updatesprite(id+oy*100)
-        }
       }else{
         if (data.held_signal===null){
           for (l=0;l<=3;l++){
@@ -426,6 +438,11 @@ addLayer("ma", {
         }
       }
       cr_updatesprite(id)
+      for (let l=0;l<=3;l++){
+        let o=cr_orderofchecks[l]
+        console.log(l,o.x,o.y,id+o.x+o.y*100)
+        cr_updatesprite(id+o.x+o.y*100)
+      }
     },
     getStyle(data,id){
       let style = {
@@ -459,10 +476,9 @@ addLayer("ma", {
         style["background-color"]=data.state==0?"#222222":(data.state==2?"#eb7d34":"#3496eb")
       }else{
         if (data.component_type=="responsive cable"){
-          console.log("wire")
           let pos=`${-data.wire_sprite*100}% 50%`
-          style["background-image"]='url("./wire_E.png")'
           style["background-position"]=pos
+          style["background-image"]='url("./wire_E.png")'
         }else if (data.component_type=="responsive dust"){
           let pos=`${-data.wire_sprite*100}% 50%`
           style["background-position"]=pos
