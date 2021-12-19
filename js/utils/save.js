@@ -155,7 +155,19 @@ function fixSave() {
   for ([key,value] of Object.entries(player.cr.items)){
     value.amount=new Decimal(value.amount)
   }
-
+  
+  for(ly=100;ly<=900;ly+=100){
+    for(lx=1;lx<=9;lx++){
+      let c=getGridData("ma",lx+ly)
+      if(c)setGridData("ma",lx+ly,ma_component_make(c.component_type,lx+ly))
+    }
+  }
+  for(ly=200;ly<=800;ly+=100){
+    for(lx=2;lx<=8;lx++){
+      cr_updatesprite(lx+ly)
+      refreshtile("ma",lx+ly)
+    }
+  }
 }
 function fixData(defaultData, newData) {
 	for (item in defaultData) {
