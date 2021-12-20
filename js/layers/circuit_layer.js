@@ -30,7 +30,6 @@ class MA_component {
     let pos_x=this.pos.x+o.x
     let pos_y=this.pos.y+o.y
     let comp=ma_getcomponent(pos_x,pos_y)
-    if(!comp)console.log("no neighbor???",pos_x,pos_y)
     return comp
   }
   //returns a list of all sides with that are ready (or if given a list of sides, only neighbors that are one of those sides)
@@ -99,108 +98,249 @@ class MA_component {
             lastvalue=neighbor_val
             dir=l
           }
-          if(l==0)console.log(l,dir,neighbor_val,lastvalue)
         }
       }
     }
     return dir
   }
 }
-
 class MA_null extends MA_component {
   constructor(pos){
     super(pos)
     this.component_type=""
   }
   title() {
-    return "E"
+    return ""
   }
   process() {
 
   }
 }
-
+//the ports at the edge of the screen
 class MA_port extends MA_component {
   constructor(pos){
     super(pos)
     this.component_type="port"
+    this.mode=""
+    this.port=0
+    this.portindex=0
   }
-  title() {
-    return "P"
+  clear(){
+    this.portindex=0
+    this.pulled=false
   }
-  process() {
+  title(){
+    return this.mode+"\n"+this.port
+  }
+  updateoutput(){
+    if (this.portindex>=ma_inputports[this.port].length){this.portindex=0}
+    this.outbox=[]
+    this.outbox[this.targport]=ma_inputports[this.port][this.portindex]
+  }
+  on_pull() {
+    if (this.mode=="I"){
+      this.portindex+=1
+      this.updateoutput()//peek end value
+      this.pulled=true
+    }
+  }
+  preprocess() {
+    if(this.targport===undefined){
+      for (let l=0;l<=3;l++){
+        if (!this.neighbor(l)){
+          this.targport=this.rotate(l,2)
+        }
+      }
+      this.updateoutput()
+    }
+    this.outbox=[]
+    if (this.mode=="I"){
+      if (this.pulled){
+        this.pulled=false
+      }else{
+        this.updateoutput()
+      }
+    }else if (this.mode=="O"){
+      if (this.neighbor(this.targport).peek(this.targport)!==undefined){
+        this.neighbor(this.targport).pull(this.targport)
+      }
+    }
 
   }
 }
-
-class MA_cross_slate extends MA_component {
+//just holds the formatting for the 4 queued numbers at the edge of the tiles.
+class MA_slate_base extends MA_component {
+  constructor(pos){
+    super(pos)
+  }
+  
+  title() {
+    return `
+    <div style="
+    position: absolute;
+    right:5%;
+    border-radius:10px;
+    background-color:#22222244;
+    min-width:30px;
+    ">${this.outputcache[0]!==undefined?this.outputcache[0]:""}</div>
+    <div style="width:100%;justify-content: center;display:flex">
+    <div style="
+    position: absolute;
+    bottom:5%;
+    text-align: center;
+    border-radius:10px;
+    background-color:#22222244;
+    min-width:30px;
+    ">${this.outputcache[1]!==undefined?this.outputcache[1]:""}</div>
+    </div>
+    <div style="
+    position: absolute;
+    left:5%;
+    border-radius:10px;
+    background-color:#22222244;
+    min-width:30px;
+    ">${this.outputcache[2]!==undefined?this.outputcache[2]:""}</div>
+    <div style="width:100%;justify-content: center;display:flex">
+    <div style="
+    position: absolute;
+    top:5%;
+    left: auto;
+    right: auto;
+    width: auto;
+    text-align: center;
+    border-radius:10px;
+    background-color:#22222244;
+    min-width:30px;
+    ">${this.outputcache[3]!==undefined?this.outputcache[3]:""}</div>
+    </div>
+    `
+  }
+  on_pull(dir) {
+    this.outputcache[dir]=undefined
+  }
+}
+class MA_cross_slate extends MA_slate_base {
   constructor(pos){
     super(pos)
     this.component_type="cross slate"
-  }
-  title() {
-    return "C"
-  }
-  on_pull(dir) {
-    this.outbox[dir]=undefined
+    this.outputcache=[]
+    this.lastV=""
   }
   process() {
-    this._newstate.outbox=[]
-    if (this.ready_neighbor_count()>0){
-      for (let l=0;l<=3;l++){
-        if (this.neighbor(l).peek()!==undefined){
-          this._newstate.outbox[this.rotate(l,2)]=this.neighbor(l).pull(l)
+    for (l=0;l<=3;l++){
+      if (this.outputcache[this.rotate(l,2)]==undefined){
+        let v=this.neighbor(l).peek(l)
+        if (v!==undefined){
+          this.neighbor(l).pull(l)
+          this.lastV=v
+          this.outputcache[this.rotate(l,2)]=v
         }
       }
     }
   }
-}
-
-class MA_responsive_dust extends MA_component {
-  constructor(pos){
-    super(pos)
-    this.component_type="responsive dust"
-    
-  }
-  title() {
-    return "D"
-  }
-  process(){
-    this._newstate.outbox=[1,1,1,1]
+  postprocess() {
+    this._newstate.outbox=[]
+    for (l=0;l<=3;l++){
+      this._newstate.outbox[l]=this.outputcache[l]
+    }
   }
 }
-
-class MA_logic_slate extends MA_component {
+class MA_logic_slate extends MA_slate_base {
   constructor(pos){
     super(pos)
     this.component_type="logic slate"
-    this.clearports=[]
-    this._newstate.clearports=[]
+    this.outputcache=[]
+    this.lastV=""
   }
-  title() {return "L"}
+
   on_pull(dir) {
+    this.outputcache[dir]=undefined
   }
   process() {
-    let out=[]
     if (this.ready_neighbor_count()==2){
-      for(l=0;l<=3;l++){
-        this.neighbor(l).pull(l)
+      let rd=[]
+      let rv=[]
+      for (l=0;l<=3;l++){
+        if (this.neighbor(l).peek(l)!==undefined){
+          rd.push(l)
+          rv.push(this.neighbor(l).pull(l))
+        }
       }
-      for(l=0;l<=3;l++){out[l]=0}
+      if (rd[0]%2==rd[1]%2){//shape | (values directly collide)
+        console.log("|")
+        for (l=0;l<=1;l++){
+          if(this.neighbor(this.rotate(rd[l],1)).component_type!==""){
+            this.outputcache[this.rotate(rd[l],1)]=!(rv[0]>0&&rv[1]>0)?1:0
+          }
+        }
+      }else{//shape L (values collide at an angle)
+        console.log("L  ")
+        for (l=0;l<=1;l++){
+          if(this.neighbor(this.rotate(rd[l],2)).component_type!==""){
+            this.outputcache[this.rotate(rd[l],2)]=rv[l]-rv[1-l]
+          }
+        }
+      }
     }
-    this._newstate.outbox=out
+  }
+  postprocess() {
+    this._newstate.outbox=[]
+    for (l=0;l<=3;l++){
+      this._newstate.outbox[l]=this.outputcache[l]
+    }
   }
 }
-
-
+class MA_base_dust extends MA_component {
+  constructor(pos){
+    super(pos)
+    this.component_type="dust"
+    this.pulled=true
+  }
+  title() {
+    return ""
+  }
+  on_pull(){
+    this._newstate.outbox=[]
+    this._newstate.pulled=true
+  }
+  postprocess(){
+    if (this.pulled){
+      this.pulled=false
+      this.outbox=this.signal
+    }else{
+    }
+  }
+}
+class MA_responsive_dust extends MA_base_dust {
+  constructor(pos){
+    super(pos)
+    this.component_type="responsive dust"
+    this.signal=[1,1,1,1]
+  }
+}
+class MA_dust extends MA_base_dust {
+  constructor(pos){
+    super(pos)
+    this.component_type="dust"
+    this.signal=[0,0,0,0]
+  }
+}
+class MA_lively_dust extends MA_base_dust {
+  constructor(pos){
+    super(pos)
+    this.component_type="lively dust"
+    this.signal=[-1,-1,-1,-1]
+  }
+}
 class MA_responsive_cable extends MA_component {
   constructor(pos){
     super(pos)
-    console.log("created cable",pos)
     this.component_type="responsive cable"
   }
   title() {
-    return (this.heldvalue!==undefined?this.heldvalue:"")
+    return ma_bubble(
+      this.heldvalue!==undefined?this.heldvalue:""
+    )
   }
   on_pull(dir) {
     //console.log("pulled!",cr_orderofchecks[dir].c)
@@ -213,13 +353,14 @@ class MA_responsive_cable extends MA_component {
     }else{
       if (this.ready_neighbor_count()>=1){
         let biggest=this.biggest_neigbor()
-        console.log(biggest)
         if(biggest!==undefined){
           this.heldvalue=this.neighbor(biggest).pull(biggest)
           this.blocked=biggest
         }
       }
     }
+  }
+  postprocess(){
     this._newstate.outbox=[]
     for (let l=0;l<=3;l++){
       if (l!==this.blocked){
@@ -237,6 +378,36 @@ cr_orderofchecks=[
   {x: 0,y:-1,c:"^"}
 ]
 
+function ma_bubble(txt){
+  return `
+  <div style="width:100%;justify-content: center;display:flex">
+  <div style="
+  margin-top:35%;
+  border-radius:10px;
+  background-color:#22222244;
+  min-width:30px;
+  ">${txt}</div>
+  </div>
+  `
+}
+
+/*
+ma_inputports=[
+  [1,2,3,4,5,6,7,8,9,10],
+  [10,9,8,7,6,5,4,3,2,1]
+]
+*/
+ma_inputports=[
+  [0,1,0,1],
+  [0,0,1,1]
+]
+ma_outputports=[
+  [],
+  [],
+  []
+]
+
+
 function refreshtile(layer,id){
   let data=getGridData(layer,id)
   setGridData(layer,id,data===false?true:false)//set it to a value it definitely isn't.
@@ -251,10 +422,10 @@ function cr_updatesprite(id){
     let o=cr_orderofchecks[l]
     let data=getGridData("ma",id+o.x+o.y*100)
     if(
-      (maindata.component_type!=="responsive dust")||
-      (maindata.component_type=="responsive dust"&&data.component_type!=="responsive dust")
+      (!maindata.component_type.endsWith("dust")||!data.component_type.endsWith("dust"))&&
+      (data.component_type!=="port"||data.state!=="")
     ){
-      spr+=(data.component_type!==""||(0+data.state>0))?2**(l):0
+      spr+=data.component_type!==""?2**(l):0
     }
   }
   getGridData("ma",id).wire_sprite=spr
@@ -292,8 +463,14 @@ ma_puzzledata={
 
 function ma_component_make(type,id){
   switch (type){
+    case "port":
+      return new MA_port(id)
     case "responsive dust":
       return new MA_responsive_dust(id)
+    case "dust":
+      return new MA_dust(id)
+    case "lively dust":
+      return new MA_lively_dust(id)
     case "cross slate":
       return new MA_cross_slate(id)
     case "logic slate":
@@ -333,7 +510,7 @@ addLayer("ma", {
     }
   },
   type: "none",
-  color: "#DBC046",
+  color: "#ffd541",
   bars: {
     tick: {
         direction: RIGHT,
@@ -352,6 +529,12 @@ addLayer("ma", {
         for(ly=0;ly<=8;ly++){
           for(lx=0;lx<=8;lx++){
             let c=ma_getcomponent(lx,ly)
+            if (c.preprocess)c.preprocess()//no pulls or pushes should happen here
+          }
+        }
+        for(ly=0;ly<=8;ly++){
+          for(lx=0;lx<=8;lx++){
+            let c=ma_getcomponent(lx,ly)
             if (c.process)c.process()
           }
         }
@@ -359,6 +542,7 @@ addLayer("ma", {
         for(ly=0;ly<=8;ly++){
           for(lx=0;lx<=8;lx++){
             let c=ma_getcomponent(lx,ly)
+            if (c.postprocess)c.postprocess()
             for ([k,v] of Object.entries(c._newstate)){
               c[k]=v
             }
@@ -391,7 +575,11 @@ addLayer("ma", {
         for(ly=100;ly<=900;ly+=100){
           for(lx=1;lx<=9;lx++){
             let c=getGridData("ma",lx+ly)
-            if(c)setGridData("ma",lx+ly,ma_component_make(c.component_type,lx+ly))
+            if (c.clear){
+              c.clear()
+            }else{
+              if(c)setGridData("ma",lx+ly,ma_component_make(c.component_type,lx+ly))
+            }
           }
         }
       }
@@ -408,13 +596,33 @@ addLayer("ma", {
       }
     },
     getTitle(data,id){
-      return data.title?data.title():"?"
+      return data.title?data.title():undefined
     },
     onClick(data,id){
       if (player.subtabs.ma.mainTabs=="designer"){
         
         if ((id%100==1||id%100==9||id<200||id>900)){
-          data=(data+1)%3
+          switch (data.mode){
+            case "":
+              data.mode="I"
+              data.port=0
+              break
+            case "I":
+              data.port+=1
+              if(data.port>=ma_inputports.length){
+                data.port=0
+                data.mode="O"
+              }
+              break
+            case "O":
+              data.port+=1
+              if(data.port>=ma_outputports.length){
+                data.port=0
+                data.mode=""
+              }
+              break
+
+          }
           for(lx=2;lx<=8;lx++){
             for(ly=200;ly<=800;ly+=100){
               cr_updatesprite(lx+ly)
@@ -422,7 +630,9 @@ addLayer("ma", {
           }
         }else{
           if (player.cr.selected){
-            setGridData("ma",id,ma_component_make(player.cr.selected,id))
+            if(cr_getitem(player.cr.selected).gt(0)){
+              setGridData("ma",id,ma_component_make(player.cr.selected,id))
+            }
           }else{
             setGridData("ma",id,ma_component_make("",id))
           }
@@ -459,9 +669,7 @@ addLayer("ma", {
         "-webkit-text-stroke-color": "black",
         "font-size": "20px",
         "font-weight": "bold",
-        "color": player.subtabs.ma.mainTabs!=="designer"?
-        ((id%100+(Math.floor(id/100)))%2==0?"#112ed1":"#1751e3"):
-        "#00000000"
+        "color": player.subtabs.ma.mainTabs!=="designer"?"#df3e23":"#00000000"
       }
       if (player.subtabs.ma.mainTabs=="designer"){
         style["background-color"]=(id%100+(Math.floor(id/100)))%2==1?"#36d106":"#87fa23"
@@ -469,13 +677,13 @@ addLayer("ma", {
       let lrside=id%100==1||id%100==9
       let tbside=id<200||id>=900
       if (lrside){
-        style.width="20px"
+        style.width="40px"
       }
       if (tbside){
-        style.height="20px"
+        style.height="40px"
       }
       if(tbside||lrside){
-        style["background-color"]=data.state==0?"#222222":(data.state==2?"#eb7d34":"#3496eb")
+        style["background-color"]=data.mode==""?"#222222":(data.mode=="O"?"#eb7d34":"#3496eb")
       }else{
         if (data.component_type=="responsive cable"){
           let pos=`${-data.wire_sprite*100}% 50%`
@@ -485,6 +693,14 @@ addLayer("ma", {
           let pos=`${-data.wire_sprite*100}% 50%`
           style["background-position"]=pos
           style["background-image"]='url("./responsive_dust_E.png")'
+        }else if (data.component_type=="lively dust"){
+          let pos=`${-data.wire_sprite*100}% 50%`
+          style["background-position"]=pos
+          style["background-image"]='url("./lively_dust_E.png")'
+        }else if (data.component_type=="dust"){
+          let pos=`${-data.wire_sprite*100}% 50%`
+          style["background-position"]=pos
+          style["background-image"]='url("./dust_E.png")'
         }else if (data.component_type=="cross slate"){
           let pos=`${-data.wire_sprite*100}% 50%`
           style["background-position"]=pos
@@ -511,7 +727,21 @@ addLayer("ma", {
     designer: {
       content:[
         "grid",
-        ["layer-proxy",["cr",[["grid",[3]]]]]
+        ["layer-proxy",["cr",
+        [
+          ["row",[
+            ["grid-tile",[301]],
+            ["grid-tile",[101]],
+            ["grid-tile",[201]],
+          ]],
+          ["row",[
+            ["grid-tile",[302]],
+            ["grid-tile",[303]],
+            ["grid-tile",[304]],
+            ["grid-tile",[305]],
+          ]]
+        ]
+      ]]
       ]
     },
     simulator: {

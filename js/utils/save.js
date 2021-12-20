@@ -159,7 +159,9 @@ function fixSave() {
   for(ly=100;ly<=900;ly+=100){
     for(lx=1;lx<=9;lx++){
       let c=getGridData("ma",lx+ly)
-      if(c)setGridData("ma",lx+ly,ma_component_make(c.component_type,lx+ly))
+      let newc=ma_component_make(c.component_type,lx+ly)
+      if (c.component_type=="port")newc.mode=c.mode,newc.port=c.port
+      if(c)setGridData("ma",lx+ly,newc)
     }
   }
   for(ly=200;ly<=800;ly+=100){
