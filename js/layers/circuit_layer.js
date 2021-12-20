@@ -3,50 +3,103 @@ class MA_component {
   constructor(pos){
     this.pos={x:pos%100-1,y:Math.floor(pos/100)-1}
     this.outbox=[]//all values going out, arranged in the standard 0-3 direction style.
-    this.newoutbox=[]
+    this._newstate={}//all values in newstate overwrite the values in the current state, useful for queueing changes to the object for the next tick, and all changes also.
   }
+  //rotate rotates a value, keeping it within the 0 to 3 range.
   rotate(dir,rot){
     return (dir+rot)%4
   }
+  //pulls a value, the dir is rotated 180* so you can do this.neighbor(l).pull(l)
   pull(dir) {
     dir=this.rotate(dir,2)
+    if (this.component_type=="responsive dust"){
+    }
     let value=this.outbox[dir]
-    if(this.on_pull)this.on_pull(value,dir)
-    delete this.outbox[dir]
+    if(this.on_pull)this.on_pull(dir)
     return value
   }
+  //allows you to check data without calling on_pull, if on_pull is unsupplied it is identical, however
   peek(dir) {
     dir=this.rotate(dir,2)
     let value=this.outbox[dir]
     return value
   }
+  //fetches the neighbor of an object (can be chained, this.neighbor(1).neighbor(1)...)
   neighbor(dir) {
     let o=cr_orderofchecks[dir]
     let pos_x=this.pos.x+o.x
     let pos_y=this.pos.y+o.y
     let comp=ma_getcomponent(pos_x,pos_y)
     if(!comp)console.log("no neighbor???",pos_x,pos_y)
-    return comp||new MA_null(pos_x+pos_y*100)
+    return comp
   }
-  ready_neigbors() {
-    let ready=0
-    for (let l=0;l<=3;l++){
-      let o=cr_orderofchecks[l]
-      if(this.neighbor(l).peek(l)){
-        ready+=1
+  //returns a list of all sides with that are ready (or if given a list of sides, only neighbors that are one of those sides)
+  ready_neighbor_list(vals) {
+    let ready=[]
+    if (vals){
+      for (let vl=0;vl<vals.length;vl++){
+        let l=vals[vl]
+        let o=cr_orderofchecks[l]
+        if(this.neighbor(l).peek(l)!==undefined){
+          ready.push(l)
+        }
+      }
+    }else{
+      for (let l=0;l<=3;l++){
+        let o=cr_orderofchecks[l]
+        if(this.neighbor(l).peek(l)!==undefined){
+          ready.push(l)
+        }
       }
     }
     return ready
   }
-  biggest_neigbor() {
+  //returns the number of neighbors that are ready (or if given a list of sides, only neighbors that are one of those sides)
+  ready_neighbor_count(vals) {
+    let ready=0
+    if (vals){
+      for (let vl=0;vl<vals.length;vl++){
+        let l=vals[vl]
+        let o=cr_orderofchecks[l]
+        if(this.neighbor(l).peek(l)!==undefined){
+          ready++
+        }
+      }
+    }else{
+      for (let l=0;l<=3;l++){
+        let o=cr_orderofchecks[l]
+        if(this.neighbor(l).peek(l)!==undefined){
+          ready++
+        }
+      }
+    }
+    return ready
+  }
+  //returns the side of the largest neighboring value, or undefined if there are no neighbors that are ready.
+  biggest_neigbor(vals) {
     let lastvalue=-Infinity
     let dir
-    for (let l=0;l<=3;l++){
-      let neighbor_val=this.neighbor(l).peek(l)
-      if(neighbor_val){
-        if (neighbor_val>lastvalue){
-          lastvalue=neighbor_val
-          dir=l
+    if (vals){
+      for (let vl=0;vl<vals.length;vl++){
+        let l=vals[vl]
+        let neighbor_val=this.neighbor(l).peek(l)
+        if(neighbor_val!==undefined){
+          if (neighbor_val>lastvalue){
+            lastvalue=neighbor_val
+            dir=l
+          }
+          if(l==0)console.log(l,dir,neighbor_val,lastvalue)
+        }
+      }
+    }else{
+      for (let l=0;l<=3;l++){
+        let neighbor_val=this.neighbor(l).peek(l)
+        if(neighbor_val!==undefined){
+          if (neighbor_val>lastvalue){
+            lastvalue=neighbor_val
+            dir=l
+          }
+          if(l==0)console.log(l,dir,neighbor_val,lastvalue)
         }
       }
     }
@@ -88,8 +141,18 @@ class MA_cross_slate extends MA_component {
   title() {
     return "C"
   }
+  on_pull(dir) {
+    this.outbox[dir]=undefined
+  }
   process() {
-
+    this._newstate.outbox=[]
+    if (this.ready_neighbor_count()>0){
+      for (let l=0;l<=3;l++){
+        if (this.neighbor(l).peek()!==undefined){
+          this._newstate.outbox[this.rotate(l,2)]=this.neighbor(l).pull(l)
+        }
+      }
+    }
   }
 }
 
@@ -97,49 +160,70 @@ class MA_responsive_dust extends MA_component {
   constructor(pos){
     super(pos)
     this.component_type="responsive dust"
+    
   }
   title() {
     return "D"
   }
-  process() {
-    this.outbox=[1,1,1,1]
+  process(){
+    this._newstate.outbox=[1,1,1,1]
   }
 }
+
+class MA_logic_slate extends MA_component {
+  constructor(pos){
+    super(pos)
+    this.component_type="logic slate"
+    this.clearports=[]
+    this._newstate.clearports=[]
+  }
+  title() {return "L"}
+  on_pull(dir) {
+  }
+  process() {
+    let out=[]
+    if (this.ready_neighbor_count()==2){
+      for(l=0;l<=3;l++){
+        this.neighbor(l).pull(l)
+      }
+      for(l=0;l<=3;l++){out[l]=0}
+    }
+    this._newstate.outbox=out
+  }
+}
+
 
 class MA_responsive_cable extends MA_component {
   constructor(pos){
     super(pos)
     console.log("created cable",pos)
     this.component_type="responsive cable"
-    this.tickcount=0
-    this.neighbor_count=0
   }
   title() {
-    return "W"+this.heldvalue+"<br>"+this.neighbor_count
+    return (this.heldvalue!==undefined?this.heldvalue:"")
   }
-  on_pull() {
-    console.log("pulled!")
-    this.heldvalue=undefined,
-    this.newoutbox=[]
+  on_pull(dir) {
+    //console.log("pulled!",cr_orderofchecks[dir].c)
+    this.heldvalue=undefined
+    this._newstate.outbox=[]
+    this.blocked=-1
   }
   process() {
-    this.neighbor_count=0
-    for (l=0;l<=3;l++){
-      if(this.neighbor(l).component_type!=="")this.neighbor_count+=1
-    }
-    if (this.ready_neigbors()>=1){
-      let biggest=this.biggest_neigbor()
-      if(biggest){
+    if(this.heldvalue!==undefined){
+    }else{
+      if (this.ready_neighbor_count()>=1){
+        let biggest=this.biggest_neigbor()
         console.log(biggest)
-        this.heldvalue=this.neighbor(biggest).peek(biggest)
-      }else{
-        this.heldvalue=undefined 
-      }
-      this.newoutbox=[]
-      for (l=0;l<=3;l++){
-        if (l!==biggest){
-          this.newoutbox[l]=this.heldvalue
+        if(biggest!==undefined){
+          this.heldvalue=this.neighbor(biggest).pull(biggest)
+          this.blocked=biggest
         }
+      }
+    }
+    this._newstate.outbox=[]
+    for (let l=0;l<=3;l++){
+      if (l!==this.blocked){
+        this._newstate.outbox[l]=this.heldvalue
       }
     }
   }
@@ -178,7 +262,9 @@ function cr_updatesprite(id){
 }
 
 function ma_r(v){
-  return Math.floor((Math.random()*2-1)*v)
+  return Math.floor(
+    (Math.random()*v*2-v+1)
+  )
 }
 
 ma_puzzledata={
@@ -210,6 +296,8 @@ function ma_component_make(type,id){
       return new MA_responsive_dust(id)
     case "cross slate":
       return new MA_cross_slate(id)
+    case "logic slate":
+      return new MA_logic_slate(id)
     case "responsive cable":
       return new MA_responsive_cable(id)
     default:
@@ -271,7 +359,11 @@ addLayer("ma", {
         for(ly=0;ly<=8;ly++){
           for(lx=0;lx<=8;lx++){
             let c=ma_getcomponent(lx,ly)
-            c.outbox=c.newoutbox
+            for ([k,v] of Object.entries(c._newstate)){
+              c[k]=v
+            }
+            c._newstate={}
+            refreshtile("ma",lx+ly*100+101)
           }
         }
       }
@@ -290,6 +382,18 @@ addLayer("ma", {
       canClick() {return true},
       onClick(){
         layers.ma.fastfwd=!layers.ma.fastfwd
+      }
+    },
+    13: {
+      title:function(){return "clear"},
+      canClick() {return true},
+      onClick(){
+        for(ly=100;ly<=900;ly+=100){
+          for(lx=1;lx<=9;lx++){
+            let c=getGridData("ma",lx+ly)
+            if(c)setGridData("ma",lx+ly,ma_component_make(c.component_type,lx+ly))
+          }
+        }
       }
     }
   },
