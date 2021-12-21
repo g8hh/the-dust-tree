@@ -270,7 +270,6 @@ class MA_logic_slate extends MA_slate_base {
     super(pos)
     this.component_type="logic slate"
     this.outputcache=[]
-    this.lastV=""
   }
 
   on_pull(dir) {
@@ -298,6 +297,46 @@ class MA_logic_slate extends MA_slate_base {
         for (l=0;l<=1;l++){
           if(this.neighbor(this.rotate(rd[l],2)).component_type!==""){
             this.outputcache[this.rotate(rd[l],2)]=rv[l]-rv[1-l]
+          }
+        }
+      }
+    }
+  }
+  postprocess() {
+    this._newstate.outbox=[]
+    for (l=0;l<=3;l++){
+      this._newstate.outbox[l]=this.outputcache[l]
+    }
+  }
+}
+class MA_togglable_slate extends MA_slate_base {
+  constructor(pos){
+    super(pos)
+    this.component_type="togglable slate"
+    this.outputcache=[]
+  }
+
+  on_pull(dir) {
+    this.outputcache[dir]=undefined
+  }
+  process() {
+    if (this.ready_neighbor_count()==2){
+      let rd=[]
+      let rv=[]
+      for (l=0;l<=3;l++){
+        if (this.neighbor(l).peek(l)!==undefined){
+          rd.push(l)
+          rv.push(this.neighbor(l).pull(l))
+        }
+      }
+      if (rd[0]%2==rd[1]%2){//shape | (values directly collide)
+      }else{//shape L (values collide at an angle)
+        console.log("L  ")
+        for (l=0;l<=1;l++){
+          if(this.neighbor(this.rotate(rd[l],2)).component_type!==""){
+            if(rv[1-l]>0){
+              this.outputcache[this.rotate(rd[l],2)]=rv[l]
+            }
           }
         }
       }
@@ -497,6 +536,8 @@ function ma_component_make(type,id){
       return new MA_logic_slate(id)
     case "responsive cable":
       return new MA_responsive_cable(id)
+    case "togglable slate":
+      return new MA_togglable_slate(id)
     default:
       return new MA_null(id)
   }
