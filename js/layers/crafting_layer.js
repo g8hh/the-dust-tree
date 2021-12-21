@@ -64,7 +64,7 @@ for ([column,resources] of Object.entries(cr_data.resources)){
 {
 //called internally for new items
 function cr_newitem(id){
-  return {amount: new Decimal(0), haveseen: false}
+  return {amount: new Decimal(0),lifetime_max: new Decimal(0), haveseen: false}
 }
 //gets all of an item's data
 function cr_getobj(id){
@@ -101,6 +101,7 @@ function cr_setitem(id,amt){
   //so id can be things like "dust"
   if (typeof id=="string"){id=cr_data.nameid[id]}
   //and non-resources shouldn't be accessible
+  player.cr.items[itemname].amount=player.cr.items[itemname].amount.max(amt)
   if (!cr_data.resources[id]){return}
   let itemname=cr_data.resources[id].name
   if (!player.cr.items[itemname]){
@@ -192,18 +193,6 @@ let data={
     update(diff){
       cr_t+=diff
     },
-    buyables: {
-      11: {
-        display() { return `${player.cr.scroungeable_dust} renaining\n${cr_getitem("dust")} dust in storage.\ngather ${this.cost()} dust` },
-        canAfford() { return player.cr.scroungeable_dust.gt(0) },
-        cost() {return 1},
-        buy() {
-            player.cr.scroungeable_dust = player.cr.scroungeable_dust.sub(this.cost())
-            cr_additem("dust",1)
-        },
-        onHold(){},
-      },
-    },
     clickables: {
       rows:9,
       cols:9,
@@ -290,23 +279,17 @@ let data={
         }
       }
     },
-    tabFormat: {
-      "dust gathering": {
-          content: ["buyables"],
-      },
-      "crafting": {
-          content: [
-            ["row",[
-            ["clickable",11],
-            ["clickable",12],
-            ["clickable",13],
-            ["blank",40,100],
-            ["clickable",44],
-            ]],
-            "grid"
-          ],
-      },
-    },
+    tabFormat: [
+      ["row",[
+      ["clickable",11],
+      ["clickable",12],
+      ["blank",100,100],
+      ["clickable",13],
+      ["blank","0px","20px"],
+      ["clickable",44],
+      ]],
+      "grid"
+    ],
     grid: {
       rows: 10,
       cols: 7,

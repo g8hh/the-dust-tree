@@ -3,7 +3,7 @@ let modInfo = {
 	id: "adewredsyewertfghutyrerwfgdt",
 	author: "chip",
 	pointsName: "useless points",
-	modFiles: ["functions.js","layers/crafting_layer.js","layers/circuit_layer.js", "tree.js"],
+	modFiles: ["functions.js","layers/collect_layer.js","layers/crafting_layer.js","layers/circuit_layer.js", "tree.js"],
 
 	discordName: "",
 	discordLink: "",
