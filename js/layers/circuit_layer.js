@@ -124,16 +124,30 @@ class MA_port extends MA_component {
     this.mode=""
     this.port=0
     this.portindex=0
+    this.cooldown=0
+    this.maxcooldown=20
   }
   clear(){
     this.portindex=0
+    this.cooldown=0
     this.pulled=false
   }
   title(){
-    return this.mode+"\n"+this.port
+    if (this.mode!==""){
+      let pr=1-this.cooldown/this.maxcooldown
+      return `<div style="
+      position:absolute;
+      top:    ${pr*100}%;
+      bottom:         0%;
+      left:           0%;
+      right:          0%;
+      background-color:#22222244;
+      "></div>${this.port}`
+      //${this.port}
+    }//data.cooldown/data.maxcooldown
   }
   updateoutput(){
-    if (this.portindex>=ma_inputports[this.port].length){this.portindex=0}
+    if (this.portindex>=ma_inputports[this.port].length&&this.cooldown<=0){this.cooldown=this.maxcooldown}
     this.outbox=[]
     this.outbox[this.targport]=ma_inputports[this.port][this.portindex]
   }
@@ -145,6 +159,12 @@ class MA_port extends MA_component {
     }
   }
   preprocess() {
+    if (this.cooldown>0){
+      this.cooldown-=1
+      if(this.cooldown<=0){
+        this.portindex=0
+      }
+    }
     if(this.targport===undefined){
       for (let l=0;l<=3;l++){
         if (!this.neighbor(l)){
@@ -423,7 +443,7 @@ function cr_updatesprite(id){
     let data=getGridData("ma",id+o.x+o.y*100)
     if(
       (!maindata.component_type.endsWith("dust")||!data.component_type.endsWith("dust"))&&
-      (data.component_type!=="port"||data.state!=="")
+      (data.component_type!=="port"||data.mode!=="")
     ){
       spr+=data.component_type!==""?2**(l):0
     }
@@ -664,7 +684,7 @@ addLayer("ma", {
         "background-size": "auto 100%",
         //"image-rendering": "pixelated",
         "background-image": "url(./blank.png)",
-        "transition": "all .5s, background-position 0ms, background-size 0ms, -webkit-text-stroke-width 2s",
+        "transition": "all .5s, background-position 0ms, background-size 0ms",
         "-webkit-text-stroke-width": player.subtabs.ma.mainTabs!=="designer"?"0px":"1px",
         "-webkit-text-stroke-color": "black",
         "font-size": "20px",
