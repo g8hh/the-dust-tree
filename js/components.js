@@ -391,14 +391,6 @@ function loadVue() {
 	`
 	})
 
-  //custom component
-	Vue.component('grid-tile', {
-		props: ['layer', 'data'],
-		template: `
-    <div><gridable :layer = "layer" :data = "data" v-bind:style="tmp[layer].componentStyles.gridable"></gridable></div>
-	`
-	})
-
 	Vue.component('gridable', {
 		props: ['layer', 'data'],
 		template: `
