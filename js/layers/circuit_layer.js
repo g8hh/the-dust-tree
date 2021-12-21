@@ -1,29 +1,439 @@
-{
-//updates the connected wire sprites
-cr_orderofchecks=[
-  {x: 1,y: 0},
-  {x: 0,y: 1},
-  {x:-1,y: 0},
-  {x: 0,y:-1}
-]
-function cr_updatesprite(id){
-  if(id%100<=1||id%100>=9||id<200||id>900){return}
-  let spr=0
-  for (l=0;l<=3;l++){
-    let o=cr_orderofchecks[l]
-    let data=getGridData("ma",id+o.x+o.y*100)
-    spr+=data.contents!==""||data.state>0?2**(l):0
+//component classes
+class MA_component {
+  constructor(pos){
+    this.pos={x:pos%100-1,y:Math.floor(pos/100)-1}
+    this.outbox=[]//all values going out, arranged in the standard 0-3 direction style.
+    this._newstate={}//all values in newstate overwrite the values in the current state, useful for queueing changes to the object for the next tick, and all changes also.
   }
-  getGridData("ma",id).wire_sprite=spr
-  setGridData("ma",id,getGridData("ma",id))
+  //rotate rotates a value, keeping it within the 0 to 3 range.
+  rotate(dir,rot){
+    return (dir+rot)%4
+  }
+  //pulls a value, the dir is rotated 180* so you can do this.neighbor(l).pull(l)
+  pull(dir) {
+    dir=this.rotate(dir,2)
+    if (this.component_type=="responsive dust"){
+    }
+    let value=this.outbox[dir]
+    if(this.on_pull)this.on_pull(dir)
+    return value
+  }
+  //allows you to check data without calling on_pull, if on_pull is unsupplied it is identical, however
+  peek(dir) {
+    dir=this.rotate(dir,2)
+    let value=this.outbox[dir]
+    return value
+  }
+  //fetches the neighbor of an object (can be chained, this.neighbor(1).neighbor(1)...)
+  neighbor(dir) {
+    let o=cr_orderofchecks[dir]
+    let pos_x=this.pos.x+o.x
+    let pos_y=this.pos.y+o.y
+    let comp=ma_getcomponent(pos_x,pos_y)
+    return comp
+  }
+  //returns a list of all sides with that are ready (or if given a list of sides, only neighbors that are one of those sides)
+  ready_neighbor_list(vals) {
+    let ready=[]
+    if (vals){
+      for (let vl=0;vl<vals.length;vl++){
+        let l=vals[vl]
+        let o=cr_orderofchecks[l]
+        if(this.neighbor(l).peek(l)!==undefined){
+          ready.push(l)
+        }
+      }
+    }else{
+      for (let l=0;l<=3;l++){
+        let o=cr_orderofchecks[l]
+        if(this.neighbor(l).peek(l)!==undefined){
+          ready.push(l)
+        }
+      }
+    }
+    return ready
+  }
+  //returns the number of neighbors that are ready (or if given a list of sides, only neighbors that are one of those sides)
+  ready_neighbor_count(vals) {
+    let ready=0
+    if (vals){
+      for (let vl=0;vl<vals.length;vl++){
+        let l=vals[vl]
+        let o=cr_orderofchecks[l]
+        if(this.neighbor(l).peek(l)!==undefined){
+          ready++
+        }
+      }
+    }else{
+      for (let l=0;l<=3;l++){
+        let o=cr_orderofchecks[l]
+        if(this.neighbor(l).peek(l)!==undefined){
+          ready++
+        }
+      }
+    }
+    return ready
+  }
+  //returns the side of the largest neighboring value, or undefined if there are no neighbors that are ready.
+  biggest_neigbor(vals) {
+    let lastvalue=-Infinity
+    let dir
+    if (vals){
+      for (let vl=0;vl<vals.length;vl++){
+        let l=vals[vl]
+        let neighbor_val=this.neighbor(l).peek(l)
+        if(neighbor_val!==undefined){
+          if (neighbor_val>lastvalue){
+            lastvalue=neighbor_val
+            dir=l
+          }
+          if(l==0)console.log(l,dir,neighbor_val,lastvalue)
+        }
+      }
+    }else{
+      for (let l=0;l<=3;l++){
+        let neighbor_val=this.neighbor(l).peek(l)
+        if(neighbor_val!==undefined){
+          if (neighbor_val>lastvalue){
+            lastvalue=neighbor_val
+            dir=l
+          }
+        }
+      }
+    }
+    return dir
+  }
 }
+class MA_null extends MA_component {
+  constructor(pos){
+    super(pos)
+    this.component_type=""
+  }
+  title() {
+    return ""
+  }
+  process() {
+
+  }
+}
+//the ports at the edge of the screen
+class MA_port extends MA_component {
+  constructor(pos){
+    super(pos)
+    this.component_type="port"
+    this.mode=""
+    this.port=0
+    this.portindex=0
+    this.cooldown=0
+    this.maxcooldown=20
+  }
+  clear(){
+    this.portindex=0
+    this.cooldown=0
+    this.pulled=false
+  }
+  title(){
+    if (this.mode!==""){
+      let pr=1-this.cooldown/this.maxcooldown
+      return `<div style="
+      position:absolute;
+      top:    ${pr*100}%;
+      bottom:         0%;
+      left:           0%;
+      right:          0%;
+      background-color:#22222244;
+      "></div>${this.port}`
+      //${this.port}
+    }//data.cooldown/data.maxcooldown
+  }
+  updateoutput(){
+    if (this.portindex>=ma_inputports[this.port].length&&this.cooldown<=0){this.cooldown=this.maxcooldown}
+    this.outbox=[]
+    this.outbox[this.targport]=ma_inputports[this.port][this.portindex]
+  }
+  on_pull() {
+    if (this.mode=="I"){
+      this.portindex+=1
+      this.updateoutput()//peek end value
+      this.pulled=true
+    }
+  }
+  preprocess() {
+    if (this.cooldown>0){
+      this.cooldown-=1
+      if(this.cooldown<=0){
+        this.portindex=0
+      }
+    }
+    if(this.targport===undefined){
+      for (let l=0;l<=3;l++){
+        if (!this.neighbor(l)){
+          this.targport=this.rotate(l,2)
+        }
+      }
+      this.updateoutput()
+    }
+    this.outbox=[]
+    if (this.mode=="I"){
+      if (this.pulled){
+        this.pulled=false
+      }else{
+        this.updateoutput()
+      }
+    }else if (this.mode=="O"){
+      if (this.neighbor(this.targport).peek(this.targport)!==undefined){
+        this.neighbor(this.targport).pull(this.targport)
+      }
+    }
+
+  }
+}
+//just holds the formatting for the 4 queued numbers at the edge of the tiles.
+class MA_slate_base extends MA_component {
+  constructor(pos){
+    super(pos)
+  }
+  
+  title() {
+    return `
+    <div style="
+    position: absolute;
+    right:5%;
+    border-radius:10px;
+    background-color:#22222244;
+    min-width:30px;
+    ">${this.outputcache[0]!==undefined?this.outputcache[0]:""}</div>
+    <div style="width:100%;justify-content: center;display:flex">
+    <div style="
+    position: absolute;
+    bottom:5%;
+    text-align: center;
+    border-radius:10px;
+    background-color:#22222244;
+    min-width:30px;
+    ">${this.outputcache[1]!==undefined?this.outputcache[1]:""}</div>
+    </div>
+    <div style="
+    position: absolute;
+    left:5%;
+    border-radius:10px;
+    background-color:#22222244;
+    min-width:30px;
+    ">${this.outputcache[2]!==undefined?this.outputcache[2]:""}</div>
+    <div style="width:100%;justify-content: center;display:flex">
+    <div style="
+    position: absolute;
+    top:5%;
+    left: auto;
+    right: auto;
+    width: auto;
+    text-align: center;
+    border-radius:10px;
+    background-color:#22222244;
+    min-width:30px;
+    ">${this.outputcache[3]!==undefined?this.outputcache[3]:""}</div>
+    </div>
+    `
+  }
+  on_pull(dir) {
+    this.outputcache[dir]=undefined
+  }
+}
+class MA_cross_slate extends MA_slate_base {
+  constructor(pos){
+    super(pos)
+    this.component_type="cross slate"
+    this.outputcache=[]
+    this.lastV=""
+  }
+  process() {
+    for (l=0;l<=3;l++){
+      if (this.outputcache[this.rotate(l,2)]==undefined){
+        let v=this.neighbor(l).peek(l)
+        if (v!==undefined){
+          this.neighbor(l).pull(l)
+          this.lastV=v
+          this.outputcache[this.rotate(l,2)]=v
+        }
+      }
+    }
+  }
+  postprocess() {
+    this._newstate.outbox=[]
+    for (l=0;l<=3;l++){
+      this._newstate.outbox[l]=this.outputcache[l]
+    }
+  }
+}
+class MA_logic_slate extends MA_slate_base {
+  constructor(pos){
+    super(pos)
+    this.component_type="logic slate"
+    this.outputcache=[]
+    this.lastV=""
+  }
+
+  on_pull(dir) {
+    this.outputcache[dir]=undefined
+  }
+  process() {
+    if (this.ready_neighbor_count()==2){
+      let rd=[]
+      let rv=[]
+      for (l=0;l<=3;l++){
+        if (this.neighbor(l).peek(l)!==undefined){
+          rd.push(l)
+          rv.push(this.neighbor(l).pull(l))
+        }
+      }
+      if (rd[0]%2==rd[1]%2){//shape | (values directly collide)
+        console.log("|")
+        for (l=0;l<=1;l++){
+          if(this.neighbor(this.rotate(rd[l],1)).component_type!==""){
+            this.outputcache[this.rotate(rd[l],1)]=!(rv[0]>0&&rv[1]>0)?1:0
+          }
+        }
+      }else{//shape L (values collide at an angle)
+        console.log("L  ")
+        for (l=0;l<=1;l++){
+          if(this.neighbor(this.rotate(rd[l],2)).component_type!==""){
+            this.outputcache[this.rotate(rd[l],2)]=rv[l]-rv[1-l]
+          }
+        }
+      }
+    }
+  }
+  postprocess() {
+    this._newstate.outbox=[]
+    for (l=0;l<=3;l++){
+      this._newstate.outbox[l]=this.outputcache[l]
+    }
+  }
+}
+class MA_base_dust extends MA_component {
+  constructor(pos){
+    super(pos)
+    this.component_type="dust"
+    this.pulled=true
+  }
+  title() {
+    return ""
+  }
+  on_pull(){
+    this._newstate.outbox=[]
+    this._newstate.pulled=true
+  }
+  postprocess(){
+    if (this.pulled){
+      this.pulled=false
+      this.outbox=this.signal
+    }else{
+    }
+  }
+}
+class MA_responsive_dust extends MA_base_dust {
+  constructor(pos){
+    super(pos)
+    this.component_type="responsive dust"
+    this.signal=[1,1,1,1]
+  }
+}
+class MA_dust extends MA_base_dust {
+  constructor(pos){
+    super(pos)
+    this.component_type="dust"
+    this.signal=[0,0,0,0]
+  }
+}
+class MA_lively_dust extends MA_base_dust {
+  constructor(pos){
+    super(pos)
+    this.component_type="lively dust"
+    this.signal=[-1,-1,-1,-1]
+  }
+}
+class MA_responsive_cable extends MA_component {
+  constructor(pos){
+    super(pos)
+    this.component_type="responsive cable"
+  }
+  title() {
+    return ma_bubble(
+      this.heldvalue!==undefined?this.heldvalue:""
+    )
+  }
+  on_pull(dir) {
+    //console.log("pulled!",cr_orderofchecks[dir].c)
+    this.heldvalue=undefined
+    this._newstate.outbox=[]
+    this.blocked=-1
+  }
+  process() {
+    if(this.heldvalue!==undefined){
+    }else{
+      if (this.ready_neighbor_count()>=1){
+        let biggest=this.biggest_neigbor()
+        if(biggest!==undefined){
+          this.heldvalue=this.neighbor(biggest).pull(biggest)
+          this.blocked=biggest
+        }
+      }
+    }
+  }
+  postprocess(){
+    this._newstate.outbox=[]
+    for (let l=0;l<=3;l++){
+      if (l!==this.blocked){
+        this._newstate.outbox[l]=this.heldvalue
+      }
+    }
+  }
+}
+
 //updates the connected wire sprites
 cr_orderofchecks=[
-  {x: 1,y: 0},
-  {x: 0,y: 1},
-  {x:-1,y: 0},
-  {x: 0,y:-1}
+  {x: 1,y: 0,c:">"},
+  {x: 0,y: 1,c:"v"},
+  {x:-1,y: 0,c:"<"},
+  {x: 0,y:-1,c:"^"}
 ]
+
+function ma_bubble(txt){
+  return `
+  <div style="width:100%;justify-content: center;display:flex">
+  <div style="
+  margin-top:35%;
+  border-radius:10px;
+  background-color:#22222244;
+  min-width:30px;
+  ">${txt}</div>
+  </div>
+  `
+}
+
+/*
+ma_inputports=[
+  [1,2,3,4,5,6,7,8,9,10],
+  [10,9,8,7,6,5,4,3,2,1]
+]
+*/
+ma_inputports=[
+  [0,1,0,1],
+  [0,0,1,1]
+]
+ma_outputports=[
+  [],
+  [],
+  []
+]
+
+
+function refreshtile(layer,id){
+  let data=getGridData(layer,id)
+  setGridData(layer,id,data===false?true:false)//set it to a value it definitely isn't.
+  setGridData(layer,id,data)
+}
+
 function cr_updatesprite(id){
   if(id%100<=1||id%100>=9||id<200||id>900){return}
   let spr=0
@@ -32,19 +442,20 @@ function cr_updatesprite(id){
     let o=cr_orderofchecks[l]
     let data=getGridData("ma",id+o.x+o.y*100)
     if(
-      (maindata.contents!=="responsive dust")||
-      (maindata.contents=="responsive dust"&&data.contents!=="responsive dust")
+      (!maindata.component_type.endsWith("dust")||!data.component_type.endsWith("dust"))&&
+      (data.component_type!=="port"||data.mode!=="")
     ){
-      spr+=data.contents!==""||(0+data.state>0)?2**(l):0
+      spr+=data.component_type!==""?2**(l):0
     }
   }
   getGridData("ma",id).wire_sprite=spr
-  setGridData("ma",id,getGridData("ma",id))
-}
+  refreshtile("ma",id)
 }
 
 function ma_r(v){
-  return Math.floor((Math.random()*2-1)*v)
+  return Math.floor(
+    (Math.random()*v*2-v+1)
+  )
 }
 
 ma_puzzledata={
@@ -70,6 +481,42 @@ ma_puzzledata={
   }
 }
 
+function ma_component_make(type,id){
+  switch (type){
+    case "port":
+      return new MA_port(id)
+    case "responsive dust":
+      return new MA_responsive_dust(id)
+    case "dust":
+      return new MA_dust(id)
+    case "lively dust":
+      return new MA_lively_dust(id)
+    case "cross slate":
+      return new MA_cross_slate(id)
+    case "logic slate":
+      return new MA_logic_slate(id)
+    case "responsive cable":
+      return new MA_responsive_cable(id)
+    default:
+      return new MA_null(id)
+  }
+}
+
+function ma_getcomponent(x,y){
+  return getGridData("ma",x+y*100+101)
+}
+function ma_setcomponent(x,y,type){
+  let id=x+y*100+101
+  if (!(id%100==1||id%100==9||id<200||id>900)){
+    setGridData("ma",id,ma_component_make(type,id))
+  }
+}
+
+
+
+
+
+
 addLayer("ma", {
   name: "machine design",
   symbol: "MA",
@@ -83,7 +530,7 @@ addLayer("ma", {
     }
   },
   type: "none",
-  color: "#DBC046",
+  color: "#ffd541",
   bars: {
     tick: {
         direction: RIGHT,
@@ -98,152 +545,30 @@ addLayer("ma", {
     player.ma.ticklength*=layers.ma.fastfwd?.1:1
     if(!layers.ma.paused)player.ma.simtime+=diff
     for (;player.ma.simtime>player.ma.ticklength;player.ma.simtime-=player.ma.ticklength){
-      let updates={}
-      let update = function(pos,signal){
-        if (signal==null){updates[pos]=null; return true}
-        if (updates[pos] && updates[pos]!==null){
-          if (updates[pos].value<signal.value){
-            updates[pos]=signal
-            return true
+      if (player.subtabs.ma.mainTabs!=="designer"){
+        for(ly=0;ly<=8;ly++){
+          for(lx=0;lx<=8;lx++){
+            let c=ma_getcomponent(lx,ly)
+            if (c.preprocess)c.preprocess()//no pulls or pushes should happen here
           }
-        }else{
-          updates[pos]=signal
-          return true
         }
-        return false
-      }
-      let search=function(pos,o){
+        for(ly=0;ly<=8;ly++){
+          for(lx=0;lx<=8;lx++){
+            let c=ma_getcomponent(lx,ly)
+            if (c.process)c.process()
+          }
+        }
         
-      }
-      for(ly=200;ly<=800;ly+=100){
-        for(lx=2;lx<=8;lx++){
-          if (player.subtabs.ma.mainTabs!=="designer"){
-            let data=getGridData("ma",lx+ly)
-            let detected=[]
-            switch (data.contents){
-              case "responsive dust":
-                for (l=0;l<=3;l++){
-                  let o=cr_orderofchecks[l]
-                  let pos=lx+ly+o.x+o.y*100
-                  update(pos,{pos:pos,value:1})
-                }
-                break
-              case "cross slate":
-                for (l=0;l<=3;l++){
-                  let o=cr_orderofchecks[l]
-                  let pos=lx+ly+o.x+o.y*100
-                  let targdata=getGridData("ma",pos)
-                  if (targdata.held_signal!==null){
-                    if (""+targdata.held_signal.prevpos!==""+(lx+ly)){
-                      detected.push({pos:pos,signal:targdata.held_signal,ox:o.x,oy:o.y})
-                    }
-                  }
-                }
-                for (l=0;l<detected.length;l++){
-                  let det=detected[l]
-                  
-                  let searchdist=1
-                  while (searchdist<=7) {
-                    let newpos=lx+ly-det.ox*searchdist-det.oy*100*searchdist
-                    if (getGridData("ma",newpos).contents=="responsive cable"){
-                      if (getGridData("ma",newpos).held_signal===null){
-                        update(det.pos,null)
-                        update(newpos,{
-                          value:det.signal.value,
-                          pos:lx+ly-det.ox*(searchdist-1)-det.oy*100*(searchdist-1)
-                        })
-                      }
-                      break
-                    }else if (getGridData("ma",newpos).contents=="cross slate"){
-                      searchdist+=1
-                    }else{
-                      break
-                    }
-                  }
-                }
-                break;
-              case "logic slate":
-                for (l=0;l<=3;l++){
-                  let o=cr_orderofchecks[l]
-                  let pos=lx+ly+o.x+o.y*100
-                  let targdata=getGridData("ma",pos)
-                  if (targdata.held_signal!==null){
-                    if (""+targdata.held_signal.prevpos!==""+(lx+ly)){
-                      detected.push({pos:pos,signal:targdata.held_signal,ox:o.x,oy:o.y})
-                    }
-                  }
-                }
-                if (detected.length==2){
-                  //if its of the form
-                  // V
-                  //<#>
-                  // ^
-                  if (detected[0].ox==detected[1].ox||detected[0].oy==detected[1].oy){
-                    for (l=0;l<=1;l++){
-                      let det=detected[l]
-                      let newpos=lx+ly+det.oy+det.ox*100
-                      updates[det.pos]=null
-                      let a=detected[0].signal.value>0
-                      let b=detected[1].signal.value>0
-                      update(newpos,{
-                        value:(!(a&&b))?100:0,
-                        pos:lx+ly,
-                      })
-                    }
-                  }
-                  //if its of the form
-                  // V
-                  //>#>
-                  // V
-                  else{
-                    for (l=0;l<=1;l++){
-                      let det=detected[l]
-                      let newpos=lx+ly+det.oy+det.ox*100
-                      update(detected[l].pos,null)
-                      update(lx+ly-detected[l].ox-detected[l].oy*100,{
-                        value:detected[l].signal.value-detected[1-l].signal.value,
-                        pos: lx+ly,
-                      })
-                    }
-                  }
-                }else if (detected.length>=3){
-                  let facx=0
-                  let facy=0
-                  for (l=0;l<=3;l++){
-                    let skip=false
-                    let o=cr_orderofchecks[l]
-                    let pos=lx+ly+o.x+o.y*100
-                    for (l=0;l<detected.length;l++){
-                      update(detected[l].pos,null)
-                    }
-                  }
-                }
-                break;
-              case "responsive cable":
-                if (data.held_signal!==null){
-                  //data.held_signal.value+=1
-                  let moved=false
-                  for (l=0;l<=3;l++){
-                    let o=cr_orderofchecks[l]
-                    let pos=lx+ly+o.x+o.y*100
-                    let targdata=getGridData("ma",pos)
-                    if (targdata.held_signal==null && targdata.contents=="responsive cable"){
-                      if(""+pos!==""+data.held_signal.prevpos){
-                        moved=update(pos,data.held_signal)||moved
-                      }
-                    }
-                  }
-                  if (moved) {update(lx+ly,null)}
-                }
+        for(ly=0;ly<=8;ly++){
+          for(lx=0;lx<=8;lx++){
+            let c=ma_getcomponent(lx,ly)
+            if (c.postprocess)c.postprocess()
+            for ([k,v] of Object.entries(c._newstate)){
+              c[k]=v
             }
+            c._newstate={}
+            refreshtile("ma",lx+ly*100+101)
           }
-        }
-      }
-      for (const [pos, signal] of Object.entries(updates)) {
-        if (signal===null){
-          getGridData("ma",pos).held_signal=null
-        }else if (getGridData("ma",pos).contents=="responsive cable"){
-          getGridData("ma",pos).held_signal={value:signal.value,prevpos:signal.pos,pos:pos}
         }
       }
     }
@@ -262,65 +587,94 @@ addLayer("ma", {
       onClick(){
         layers.ma.fastfwd=!layers.ma.fastfwd
       }
+    },
+    13: {
+      title:function(){return "clear"},
+      canClick() {return true},
+      onClick(){
+        for(ly=100;ly<=900;ly+=100){
+          for(lx=1;lx<=9;lx++){
+            let c=getGridData("ma",lx+ly)
+            if (c.clear){
+              c.clear()
+            }else{
+              if(c)setGridData("ma",lx+ly,ma_component_make(c.component_type,lx+ly))
+            }
+          }
+        }
+      }
     }
   },
   grid: {
     rows:9,
     cols:9,
-    getStartData(){
-      
-      txt=""
-      //held signal format
-      /*
-        {
-          value: (regular number),
-          pos: (id (202, e.g))
-          prevpos: (id (202, e.g), will move if there is a free wire that isn't prevpos)
-        }
-        conflicts in movement are resolved by sending the biggest number first. (negating everything therefore could be used to send the minimum)
-        addition =a-(0-b)
-        
-      */
-      let data={contents:txt,wire_sprite:1,held_signal:null}
+    getStartData(id){
       if (id%100==1||id%100==9||id<200||id>=900){
-        data.state=0
+        return new MA_port(id)
+      }else{
+        return new MA_null(id)
       }
-      return data
     },
     getTitle(data,id){
-      return data.held_signal!==null?data.held_signal.value:""
+      return data.title?data.title():undefined
     },
     onClick(data,id){
       if (player.subtabs.ma.mainTabs=="designer"){
         
         if ((id%100==1||id%100==9||id<200||id>900)){
-          data.state=((data.state||0)+1)%3
+          switch (data.mode){
+            case "":
+              data.mode="I"
+              data.port=0
+              break
+            case "I":
+              data.port+=1
+              if(data.port>=ma_inputports.length){
+                data.port=0
+                data.mode="O"
+              }
+              break
+            case "O":
+              data.port+=1
+              if(data.port>=ma_outputports.length){
+                data.port=0
+                data.mode=""
+              }
+              break
+
+          }
           for(lx=2;lx<=8;lx++){
             for(ly=200;ly<=800;ly+=100){
               cr_updatesprite(lx+ly)
             }
           }
-        }else if (player.cr.selected){
-          if (Math.floor(cr_data.nameid[player.cr.selected]/100)==3){
-            data.contents=player.cr.selected
-          }
         }else{
-          data.contents=""
-        }
-        for (ox=-1;ox<=1;ox+=2){
-          cr_updatesprite(id+ox)
-        }
-        for (oy=-1;oy<=1;oy+=2){
-          cr_updatesprite(id+oy*100)
+          if (player.cr.selected){
+            if(cr_getitem(player.cr.selected).gt(0)){
+              setGridData("ma",id,ma_component_make(player.cr.selected,id))
+            }
+          }else{
+            setGridData("ma",id,ma_component_make("",id))
+          }
         }
       }else{
         if (data.held_signal===null){
-          data.held_signal={value:sigamount,prevpos:101,pos:id}
+          for (l=0;l<=3;l++){
+            data.outbox=[sigamount,sigamount,sigamount,sigamount]
+            data.heldvalue=sigamount
+            data.pulleddirs={}
+          }
         }else{
-          data.held_signal=null
+          data.outbox=[]
+          data.pulleddirs={}
         }
       }
       cr_updatesprite(id)
+      for (let l=0;l<=3;l++){
+        let o=cr_orderofchecks[l]
+        //console.log(l,o.x,o.y,id+o.x+o.y*100)
+        cr_updatesprite(id+o.x+o.y*100)
+      }
     },
     getStyle(data,id){
       let style = {
@@ -330,14 +684,12 @@ addLayer("ma", {
         "background-size": "auto 100%",
         //"image-rendering": "pixelated",
         "background-image": "url(./blank.png)",
-        "transition": "all .5s, background-position 0ms, background-size 0ms, -webkit-text-stroke-width 2s",
+        "transition": "all .5s, background-position 0ms, background-size 0ms",
         "-webkit-text-stroke-width": player.subtabs.ma.mainTabs!=="designer"?"0px":"1px",
         "-webkit-text-stroke-color": "black",
         "font-size": "20px",
         "font-weight": "bold",
-        "color": player.subtabs.ma.mainTabs!=="designer"?
-        ((id%100+(Math.floor(id/100)))%2==0?"#112ed1":"#1751e3"):
-        "#00000000"
+        "color": player.subtabs.ma.mainTabs!=="designer"?"#df3e23":"#00000000"
       }
       if (player.subtabs.ma.mainTabs=="designer"){
         style["background-color"]=(id%100+(Math.floor(id/100)))%2==1?"#36d106":"#87fa23"
@@ -345,33 +697,40 @@ addLayer("ma", {
       let lrside=id%100==1||id%100==9
       let tbside=id<200||id>=900
       if (lrside){
-        style.width="20px"
+        style.width="40px"
       }
       if (tbside){
-        style.height="20px"
+        style.height="40px"
       }
       if(tbside||lrside){
-        style["background-color"]=data.state==0?"#222222":(data.state==2?"#eb7d34":"#3496eb")
+        style["background-color"]=data.mode==""?"#222222":(data.mode=="O"?"#eb7d34":"#3496eb")
       }else{
-        if (data.contents=="responsive cable"){
-          style["background-image"]='url("./wire_E.png")'
+        if (data.component_type=="responsive cable"){
           let pos=`${-data.wire_sprite*100}% 50%`
-          style["background-image"]='url("./wire_E.png")'
           style["background-position"]=pos
-        }else if (data.contents=="responsive dust"){
+          style["background-image"]='url("./wire_E.png")'
+        }else if (data.component_type=="responsive dust"){
           let pos=`${-data.wire_sprite*100}% 50%`
           style["background-position"]=pos
           style["background-image"]='url("./responsive_dust_E.png")'
-        }else if (data.contents=="cross slate"){
+        }else if (data.component_type=="lively dust"){
+          let pos=`${-data.wire_sprite*100}% 50%`
+          style["background-position"]=pos
+          style["background-image"]='url("./lively_dust_E.png")'
+        }else if (data.component_type=="dust"){
+          let pos=`${-data.wire_sprite*100}% 50%`
+          style["background-position"]=pos
+          style["background-image"]='url("./dust_E.png")'
+        }else if (data.component_type=="cross slate"){
           let pos=`${-data.wire_sprite*100}% 50%`
           style["background-position"]=pos
           style["background-image"]='url("./cross_slate_E.png")'
-        }else if (data.contents=="togglable slate"){
+        }else if (data.component_type=="togglable slate"){
           style["background-size"]="auto 200%"
           let pos=`${-data.wire_sprite*100}% 00%`
           style["background-position"]=pos
           style["background-image"]='url("./togglable_slate_E.png")'
-        }else if (data.contents=="logic slate"){
+        }else if (data.component_type=="logic slate"){
           let pos=`${-data.wire_sprite*100}% 50%`
           style["background-position"]=pos
           style["background-image"]='url("./logic_slate_E.png")'
@@ -388,7 +747,21 @@ addLayer("ma", {
     designer: {
       content:[
         "grid",
-        ["layer-proxy",["cr",[["grid",[3]]]]]
+        ["layer-proxy",["cr",
+        [
+          ["row",[
+            ["grid-tile",[301]],
+            ["grid-tile",[101]],
+            ["grid-tile",[201]],
+          ]],
+          ["row",[
+            ["grid-tile",[302]],
+            ["grid-tile",[303]],
+            ["grid-tile",[304]],
+            ["grid-tile",[305]],
+          ]]
+        ]
+      ]]
       ]
     },
     simulator: {
