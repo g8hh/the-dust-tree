@@ -16,7 +16,10 @@ addLayer("co",{
   row: 0, // Row the layer is in on the tree (0 is the first row)
   clickables: {
     11: {
-      display() { return `${player.co.scroungeable_dust} renaining\n${cr_getitem("dust")} dust in storage.\ngather 1 dust` },
+      display() { return `
+      ${player.co.lifetime_scrounged.gte(10000)?(player.co.scroungeable_dust+" renaining\n"):""}
+      ${player.co.lifetime_scrounged.gte(10)?(cr_getitem("dust")+"dust in storage.\n"):""}
+      gather dust` },
       canClick() { return player.co.scroungeable_dust.gt(0) },
       onClick() {
           if (this.canClick()){

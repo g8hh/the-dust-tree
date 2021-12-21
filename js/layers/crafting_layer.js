@@ -101,9 +101,9 @@ function cr_setitem(id,amt){
   //so id can be things like "dust"
   if (typeof id=="string"){id=cr_data.nameid[id]}
   //and non-resources shouldn't be accessible
-  player.cr.items[itemname].amount=player.cr.items[itemname].amount.max(amt)
   if (!cr_data.resources[id]){return}
   let itemname=cr_data.resources[id].name
+  player.cr.items[itemname].amount=player.cr.items[itemname].amount.max(amt)
   if (!player.cr.items[itemname]){
     player.cr.items[itemname]=cr_newitem(id)
   }
