@@ -17,14 +17,15 @@ addLayer("co",{
   clickables: {
     11: {
       display() { return `
-      ${player.co.lifetime_scrounged.gte(10000)?(player.co.scroungeable_dust+" renaining\n"):""}
-      ${player.co.lifetime_scrounged.gte(10)?(cr_getitem("dust")+"dust in storage.\n"):""}
-      gather dust` },
+      gather dust
+      ${player.co.lifetime_scrounged.gte(200)?(player.co.scroungeable_dust+" renaining\n"):""}
+      ${player.co.lifetime_scrounged.gte(10)?(cr_getitem("dust")+" dust in storage.\n"):""}
+      ` },
       canClick() { return player.co.scroungeable_dust.gt(0) },
       onClick() {
           if (this.canClick()){
             player.co.scroungeable_dust = player.co.scroungeable_dust.sub(1)
-            player.co.lifetime_scrounged = player.co.lifetime_scrounged.sub(1)
+            player.co.lifetime_scrounged = player.co.lifetime_scrounged.add(1)
             cr_additem("dust",1)
           }
       },
@@ -38,6 +39,9 @@ addLayer("co",{
       height:"900",
       progress(){
         return player.co.scroungeable_dust.div(layers.co.startdust)
+      },
+      unlocked(){
+        return player.co.lifetime_scrounged.gte(10000)
       }
     }
   },
