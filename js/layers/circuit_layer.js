@@ -124,12 +124,17 @@ class MA_port extends MA_component {
     this.mode=""
     this.port=0
     this.portindex=0
-    this.cooldown=0
-    this.maxcooldown=15
   }
   clear(){
+    switch (this.mode){
+      case "I":
+        if(this.port>=ma_inputports.length)this.port=ma_inputports.length-1
+        break
+      case "O":
+        if(this.port>=ma_outputports.length)this.port=ma_outputports.length-1
+        break
+    }
     this.portindex=0
-    this.cooldown=0
     this.pulled=false
   }
   title(){
@@ -142,29 +147,30 @@ class MA_port extends MA_component {
       left:           0%;
       right:          0%;
       background-color:#22222244;
-      "></div>${this.port}`
+      "></div>${this.port} ${
+        this.mode=="I"?
+        ma_inputports[this.port].index:
+        ma_outputports[this.port].index
+      }`
       //${this.port}
     }//data.cooldown/data.maxcooldown
   }
   updateoutput(){
-    if (this.portindex>=ma_inputports[this.port].length&&this.cooldown<=0){this.cooldown=this.maxcooldown}
+    let port=ma_inputports[this.port]
+    if (port.index>=port.data.length){ma_cooldown=ma_maxcooldown}
     this.outbox=[]
-    this.outbox[this.targport]=ma_inputports[this.port][this.portindex]
+    this.outbox[this.targport]=port.data[port.index]
   }
   on_pull() {
     if (this.mode=="I"){
-      this.portindex+=1
+      let port=ma_inputports[this.port]
+      port.index+=1
       this.updateoutput()//peek end value
       this.pulled=true
+      refreshgrid("pg")
     }
   }
   preprocess() {
-    if (this.cooldown>0){
-      this.cooldown-=1
-      if(this.cooldown<=0){
-        this.portindex=0
-      }
-    }
     if(this.targport===undefined){
       for (let l=0;l<=3;l++){
         if (!this.neighbor(l)){
@@ -183,14 +189,17 @@ class MA_port extends MA_component {
     }else if (this.mode=="O"){
       if (this.neighbor(this.targport).peek(this.targport)!==undefined){
         let v=this.neighbor(this.targport).pull(this.targport)
-        let exv=ma_outputports[this.port][this.portindex]
+        let port=ma_outputports[this.port]
+        let exv=port.data[port.index]
         if (exv==v){
-          this.portindex+=1
+          port.index+=1
         }else{
           console.log(exv,v,"fail")
-          layers.ma.error_message=`expected ${exv} at ouput ${this.port}, instead got ${v}`
+          ma_error_message=`expected ${exv} at ouput ${this.port}, instead got ${v}`
+          ma_error_port=this.port
           layers.ma.paused=true
         }
+        refreshgrid("pg")
       }
     }
 
@@ -460,21 +469,45 @@ function ma_bubble(txt){
 
 
 ma_puzzledata={
-  11: {
-    //set to 1
+  101: {
+    title: "nand",
+    desc: "nand I0 with I1, send to O0",
     inputs: [
-      [0,94,-12,42]
-    ],//get pushed to all free wires with a blue io port next to them. (order goes up left right bottom)
-    outputs: [
-      [1,1,1,1]
-    ],//get pulled to fromm all wires with an orange io port next to them. (order goes up left right bottom)
-    randomized_test(){
-      return {i:[ma_r(99)],o:[1]}
-    },
-    tests_required: 104//includes deterministic outputs
+      [0,0,1,1],
+      [0,1,0,1]
+    ],
+    outputs: [[1,1,1,0]],
+    randomized_test(){},
+    rtests_required: 0
   },
-  12: {
-    name: "add",
+  102: {
+    title: "sub",
+    desc: "subtract I1 from I0, send to O0",
+    inputs: [
+      [12, 0, -50],
+      [ 4, 4,-150]
+    ],
+    outputs: [[8,-4,100]],
+    randomized_test(){
+      let a=ma_r(99)
+      let b=ma_r(99)
+      return {i:[[a],[b]],o:[[a-b]]}
+    },
+    rtests_required: 47
+  },
+  103: {
+    title: "set to 1",
+    desc: "for each I0, send a 1 to O0",
+    inputs: [[]],//get pushed to all free wires with a blue io port next to them. (order goes up left right bottom)
+    outputs: [[]],//get pulled to fromm all wires with an orange io port next to them. (order goes up left right bottom)
+    randomized_test(){
+      return {i:[[ma_r(99)]],o:[[1]]}
+    },
+    rtests_required: 50
+  },
+  104: {
+    title: "add",
+    desc: "add I0 to I1, send to O0",
     inputs: [
       [ 4,-8, 4],
       [90, 4,-8]
@@ -485,27 +518,169 @@ ma_puzzledata={
       let b=ma_r(99)
       return {i:[[a],[b]],o:[[a+b]]}
     },
-    tests_required: 103
+    rtests_required: 47
   }
 }
 
+ma_error_port=0
+ma_error_message=""
+ma_maxcooldown=20
+ma_cooldown=0
+
 ma_inputports=[
-  [0,1,0,1],
-  [0,0,1,1]
+  {data:[0,1,0,1],index:0},
+  {data:[0,0,1,1],index:0},
 ]
 ma_outputports=[
-  [1,1,1,0]
+  {data:[1,1,1,0],index:0},
 ]
 
-function ma_loadpuzzle(){
-
+function ma_loadpuzzle(id){
+  let puz=ma_puzzledata[id]
+  ma_inputports=[]
+  for (l=0;l<puz.inputs.length;l++){
+    ma_inputports[l]={data:[...puz.inputs[l]],index:0}
+  }
+  ma_outputports=[]
+  for (l=0;l<puz.outputs.length;l++){
+    ma_outputports[l]={data:[...puz.outputs[l]],index:0}
+  }
+  for(let t=0;t<puz.rtests_required;t++){
+    let test=puz.randomized_test()
+    for (let il=0;il<test.i.length;il++){
+      for (let l=0;l<test.i[il].length;l++){
+        ma_inputports[il].data.push(test.i[il][l])
+      }
+    }
+    for (let ol=0;ol<test.o.length;ol++){
+      for (let l=0;l<test.o[ol].length;l++){
+        ma_outputports[ol].data.push(test.o[ol][l])
+      }
+    }
+  }
+  ma_refresh_data()
 }
 
+//puzzle tiles
+{
+addLayer("pt",{
+  startData(){
+    return {
+      points: new Decimal(0),
+    }
+  },
+  grid: {
+    rows:10,
+    cols:10,
+    getStartData(){return{}},
+    getTitle(_,id){
+      if (ma_puzzledata[id]){
+        return ma_puzzledata[id].title
+      }
+    },
+    onClick(_,id){
+      ma_loadpuzzle(id)
+    }
+  }
+})  
+}
 
+//puzzle IO display
+{
+  function ma_getrow(id){
+    let col=id%100-1
+    let data
+    if (col<ma_inputports.length){
+      data=ma_inputports[col]
+    }else{
+      data=ma_outputports[col-ma_inputports.length]
+    }
+    return {
+      y:Math.floor(id/100)-2,
+      offset:data.index,
+      data:data.data
+    }
+  }
+  addLayer("pg",{
+    startData(){
+      return {
+        points: new Decimal(0),
+      }
+    },
+    name: "puzzle grid output", // This is optional, only used in a few places, If absent it just uses the layer id.
+    symbol: "eror", // This appears on the layer's node. Default is the id with the first letter capitalized
+    position: 0, // Horizontal position within a row. By default it uses the layer id and sorts in alphabetical order
+    color: "#b9bffb",
+    type: "none",
+    row: 0, // Row the layer is in on the tree (0 is the first row)
+    grid: {
+      rows: 6,
+      cols(){return (ma_inputports.length+ma_outputports.length)},
+      getStartData(){
+        return {}
+      },
+      getDisplay(_,id){
+        if (Math.floor(id/100)==1){
+          return (id%100>ma_inputports.length?id%100-ma_inputports.length:id%100)-1
+        }else{
+          let values=ma_getrow(id)
+          let y=values.y+values.offset
+          if (y<values.data.length){
+            let v=values.data[y]
+            return `${y}: ${v !== undefined ? v : ""}`
+          }
+        }
+      },
+      getStyle(_,id){
+        let style={
+          width: "120px",
+          height: "30px",
+          "border-radius": "0px"
+        }
+        if (Math.floor(id/100)==1){
+          style["background-color"]=id%100>ma_inputports.length?"#eb7d34":"#3496eb"
+        }else{
+          let values=ma_getrow(id)
+          let row=values.y
+          let y=values.y+values.offset
+          if (y<values.data.length){
+            if (ma_error_message&&(id%100-1==ma_inputports.length+ma_error_port)){
+              style["background-color"]="#ff0000"
+            }else{
+              style["background-color"]=(row%2==0?"#849be4":"#b9bffb")
+            }
+          }else{
+            
+            if (ma_error_message&&(id%100-1==ma_inputports.length+ma_error_port)){
+              style["background-color"]="#880000"
+            }else{
+              style["background-color"]="#222222"
+            }
+          }
+        }
+        return style
+      }
+    }
+  })
+}
+  
+  
 function refreshtile(layer,id){
   let data=getGridData(layer,id)
   setGridData(layer,id,data===false?true:false)//set it to a value it definitely isn't.
   setGridData(layer,id,data)
+}
+
+function refreshgrid(layer){
+  let rows=layers[layer].grid.rows
+  let cols=layers[layer].grid.cols
+  rows=typeof rows === "function"?rows():rows
+  cols=typeof cols === "function"?cols():cols
+  for (let ly=100;ly<=rows*100;ly+=100){
+    for(let lx=1;lx<=cols;lx++){
+      refreshtile(layer,lx+ly)
+    }
+  }
 }
 
 function cr_updatesprite(id){
@@ -533,6 +708,9 @@ function ma_r(v){
 }
 
 function ma_refresh_data(){
+  ma_cooldown=0
+  for(l=0;l<ma_inputports.length;l++) {ma_inputports[l].index=0}
+  for(l=0;l<ma_outputports.length;l++){ma_outputports[l].index=0}
   for(ly=100;ly<=900;ly+=100){
     for(lx=1;lx<=9;lx++){
       let c=getGridData("ma",lx+ly)
@@ -543,6 +721,7 @@ function ma_refresh_data(){
       }
     }
   }
+  refreshgrid("pg")
 }
 
 function ma_component_make(type,id){
@@ -644,26 +823,35 @@ addLayer("ma", {
       title:function(){return layers.ma.paused?"paused":"playing"},
       canClick() {return true},
       onClick(){
-        if (layers.ma.error_message){
-          layers.ma.error_message=""
+        if (ma_error_message){
+          ma_error_message=""
           ma_refresh_data()
         }
         layers.ma.paused=!layers.ma.paused
-      }
+      },
+      style() {return{
+        "height":"30px"
+      }}
     },
     12: {
       title:function(){return layers.ma.fastfwd?"fastforwarded":"normal"},
       canClick() {return true},
       onClick(){
         layers.ma.fastfwd=!layers.ma.fastfwd
-      }
+      },
+      style() {return{
+        "height":"30px"
+      }}
     },
     13: {
       title:function(){return "clear"},
       canClick() {return true},
       onClick(){
         ma_refresh_data()
-      }
+      },
+      style() {return{
+        "height":"30px"
+      }}
     }
   },
   grid: {
@@ -828,9 +1016,25 @@ addLayer("ma", {
     simulator: {
       content:[
         "grid",
-        ["display-text",function(){return layers.ma.error_message}],
+        ["display-text",function(){return ma_error_message}],
         ["bar",["tick"]],
-        "clickables"
+        ["row",[
+          "clickables",
+          ["layer-proxy",["pg",
+            [
+              "grid"
+            ]
+          ]]
+        ]]
+      ]
+    },
+    puzzles: {
+      content:[
+        ["layer-proxy",["pt",
+          [
+            "grid"
+          ]
+        ]]
       ]
     }
   }
