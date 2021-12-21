@@ -125,7 +125,7 @@ class MA_port extends MA_component {
     this.port=0
     this.portindex=0
     this.cooldown=0
-    this.maxcooldown=20
+    this.maxcooldown=15
   }
   clear(){
     this.portindex=0
@@ -182,7 +182,15 @@ class MA_port extends MA_component {
       }
     }else if (this.mode=="O"){
       if (this.neighbor(this.targport).peek(this.targport)!==undefined){
-        this.neighbor(this.targport).pull(this.targport)
+        let v=this.neighbor(this.targport).pull(this.targport)
+        let exv=ma_outputports[this.port][this.portindex]
+        if (exv==v){
+          this.portindex+=1
+        }else{
+          console.log(exv,v,"fail")
+          layers.ma.error_message=`expected ${exv} at ouput ${this.port}, instead got ${v}`
+          layers.ma.paused=true
+        }
       }
     }
 
@@ -450,21 +458,48 @@ function ma_bubble(txt){
   `
 }
 
-/*
-ma_inputports=[
-  [1,2,3,4,5,6,7,8,9,10],
-  [10,9,8,7,6,5,4,3,2,1]
-]
-*/
+
+ma_puzzledata={
+  11: {
+    //set to 1
+    inputs: [
+      [0,94,-12,42]
+    ],//get pushed to all free wires with a blue io port next to them. (order goes up left right bottom)
+    outputs: [
+      [1,1,1,1]
+    ],//get pulled to fromm all wires with an orange io port next to them. (order goes up left right bottom)
+    randomized_test(){
+      return {i:[ma_r(99)],o:[1]}
+    },
+    tests_required: 104//includes deterministic outputs
+  },
+  12: {
+    name: "add",
+    inputs: [
+      [ 4,-8, 4],
+      [90, 4,-8]
+    ],
+    outputs: [[94,-4,-4]],
+    randomized_test(){
+      let a=ma_r(99)
+      let b=ma_r(99)
+      return {i:[[a],[b]],o:[[a+b]]}
+    },
+    tests_required: 103
+  }
+}
+
 ma_inputports=[
   [0,1,0,1],
   [0,0,1,1]
 ]
 ma_outputports=[
-  [],
-  [],
-  []
+  [1,1,1,0]
 ]
+
+function ma_loadpuzzle(){
+
+}
 
 
 function refreshtile(layer,id){
@@ -497,26 +532,16 @@ function ma_r(v){
   )
 }
 
-ma_puzzledata={
-  11: {
-    //set to 1
-    inputs: [0,94,-12,42],//get pushed to all free wires with a blue io port next to them. (order goes up left right bottom)
-    outputs: [1,1,1,1],//get pulled to fromm all wires with an orange io port next to them. (order goes up left right bottom)
-    randomized_test(){
-      return {i:[ma_r(99)],o:[1]}
-    },
-    tests_required: 104//includes deterministic outputs
-  },
-  12: {
-    name: "add",
-    inputs: [4,90,-8,4,4,-8],
-    outputs: [94,-4,-4],
-    randomized_test(){
-      let a=ma_r(99)
-      let b=ma_r(99)
-      return {i:[a,b],o:[a+b]}
-    },
-    tests_required: 104
+function ma_refresh_data(){
+  for(ly=100;ly<=900;ly+=100){
+    for(lx=1;lx<=9;lx++){
+      let c=getGridData("ma",lx+ly)
+      if (c.clear){
+        c.clear()
+      }else{
+        if(c)setGridData("ma",lx+ly,ma_component_make(c.component_type,lx+ly))
+      }
+    }
   }
 }
 
@@ -619,6 +644,10 @@ addLayer("ma", {
       title:function(){return layers.ma.paused?"paused":"playing"},
       canClick() {return true},
       onClick(){
+        if (layers.ma.error_message){
+          layers.ma.error_message=""
+          ma_refresh_data()
+        }
         layers.ma.paused=!layers.ma.paused
       }
     },
@@ -633,16 +662,7 @@ addLayer("ma", {
       title:function(){return "clear"},
       canClick() {return true},
       onClick(){
-        for(ly=100;ly<=900;ly+=100){
-          for(lx=1;lx<=9;lx++){
-            let c=getGridData("ma",lx+ly)
-            if (c.clear){
-              c.clear()
-            }else{
-              if(c)setGridData("ma",lx+ly,ma_component_make(c.component_type,lx+ly))
-            }
-          }
-        }
+        ma_refresh_data()
       }
     }
   },
@@ -808,6 +828,7 @@ addLayer("ma", {
     simulator: {
       content:[
         "grid",
+        ["display-text",function(){return layers.ma.error_message}],
         ["bar",["tick"]],
         "clickables"
       ]
