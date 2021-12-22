@@ -145,6 +145,7 @@ addLayer("fa_designer",{
       }
     },
     onClick(_,id){
+      fa_checkfactory(player.fa.pos)
       let prevpos=player.fa.pos
       if (id%100== 1 && player.fa.pos%100> 1)player.fa.pos-=1
       if (id%100==13 && player.fa.pos%100<20)player.fa.pos+=1
@@ -159,6 +160,7 @@ addLayer("fa_designer",{
       refreshtile("fa_designer",id)
     },
     onRClick(_,id){
+      fa_checkfactory(player.fa.pos)
       let prevpos=player.fa.pos
       if (id%100== 1 && player.fa.pos%100> 1)player.fa.pos-=1
       if (id%100==13 && player.fa.pos%100<20)player.fa.pos+=1
