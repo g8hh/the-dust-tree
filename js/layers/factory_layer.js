@@ -158,6 +158,20 @@ addLayer("fa_designer",{
       refreshgrid("fa_designer")
       refreshtile("fa_designer",id)
     },
+    onRClick(_,id){
+      let prevpos=player.fa.pos
+      if (id%100== 1 && player.fa.pos%100> 1)player.fa.pos-=1
+      if (id%100==13 && player.fa.pos%100<20)player.fa.pos+=1
+      if (Math.floor(id/100)== 1 && Math.floor(player.fa.pos/100)> 1)player.fa.pos-=100
+      if (Math.floor(id/100)==13 && Math.floor(player.fa.pos/100)<20)player.fa.pos+=100
+      if (prevpos==player.fa.pos){
+        player.fa.factories[player.fa.pos][id]=""
+      }
+
+      fa_checkfactory(player.fa.pos)
+      refreshgrid("fa_designer")
+      refreshtile("fa_designer",id)
+    },
     onHold(data,id){this.onClick(data,id)}
   }
 })
