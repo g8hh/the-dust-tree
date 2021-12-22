@@ -164,12 +164,8 @@ function fixSave() {
       if(c)setGridData("ma",lx+ly,newc)
     }
   }
-  for(ly=200;ly<=800;ly+=100){
-    for(lx=2;lx<=8;lx++){
-      cr_updatesprite(lx+ly)
-      refreshtile("ma",lx+ly)
-    }
-  }
+  ma_updatesprites()
+  refreshgrid("ma")
 }
 function fixData(defaultData, newData) {
 	for (item in defaultData) {

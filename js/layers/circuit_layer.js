@@ -103,7 +103,7 @@ class MA_component {
     }
     return dir
   }
-}
+}//empty tiles
 class MA_null extends MA_component {
   constructor(pos){
     super(pos)
@@ -115,8 +115,7 @@ class MA_null extends MA_component {
   process() {
 
   }
-}
-//the ports at the edge of the screen
+}//the ports at the edge of the screen
 class MA_port extends MA_component {
   constructor(pos){
     super(pos)
@@ -204,8 +203,7 @@ class MA_port extends MA_component {
     }
 
   }
-}
-//just holds the formatting for the 4 queued numbers at the edge of the tiles.
+}//just holds the formatting for the 4 queued numbers at the edge of the tiles.
 class MA_slate_base extends MA_component {
   constructor(pos){
     super(pos)
@@ -365,7 +363,7 @@ class MA_togglable_slate extends MA_slate_base {
       this._newstate.outbox[l]=this.outputcache[l]
     }
   }
-}
+}//holds the code for all dust, each dust just changes the output and the component name
 class MA_base_dust extends MA_component {
   constructor(pos){
     super(pos)
@@ -386,21 +384,21 @@ class MA_base_dust extends MA_component {
     }else{
     }
   }
-}
+}//gives off a signal of +1
 class MA_responsive_dust extends MA_base_dust {
   constructor(pos){
     super(pos)
     this.component_type="responsive dust"
     this.signal=[1,1,1,1]
   }
-}
+}//gives off a signal of  0
 class MA_dust extends MA_base_dust {
   constructor(pos){
     super(pos)
     this.component_type="dust"
     this.signal=[0,0,0,0]
   }
-}
+}//gives off a signal of -1
 class MA_lively_dust extends MA_base_dust {
   constructor(pos){
     super(pos)
@@ -467,7 +465,8 @@ function ma_bubble(txt){
   `
 }
 
-
+//this contains all data for puzzles
+{
 ma_puzzledata={
   101: {
     title: "nand",
@@ -496,16 +495,26 @@ ma_puzzledata={
     rtests_required: 47
   },
   103: {
-    title: "set to 1",
-    desc: "for each I0, send a 1 to O0",
+    title: "low",
+    desc: "send a stream of -2 to O0, one for each input 0",
     inputs: [[]],//get pushed to all free wires with a blue io port next to them. (order goes up left right bottom)
     outputs: [[]],//get pulled to fromm all wires with an orange io port next to them. (order goes up left right bottom)
     randomized_test(){
-      return {i:[[ma_r(99)]],o:[[1]]}
+      return {i:[[0]],o:[[-2]]}
     },
     rtests_required: 50
   },
   104: {
+    title: "high",
+    desc: "send a stream of +2 to O0, one for each input 0",
+    inputs: [[]],//get pushed to all free wires with a blue io port next to them. (order goes up left right bottom)
+    outputs: [[]],//get pulled to fromm all wires with an orange io port next to them. (order goes up left right bottom)
+    randomized_test(){
+      return {i:[[0]],o:[[2]]}
+    },
+    rtests_required: 50
+  },
+  105: {
     title: "add",
     desc: "add I0 to I1, send to O0",
     inputs: [
@@ -559,6 +568,7 @@ function ma_loadpuzzle(id){
     }
   }
   ma_refresh_data()
+  ma_updatesprites()
 }
 
 //puzzle tiles
@@ -663,6 +673,7 @@ addLayer("pt",{
     }
   })
 }
+}
   
   
 function refreshtile(layer,id){
@@ -683,7 +694,7 @@ function refreshgrid(layer){
   }
 }
 
-function cr_updatesprite(id){
+function ma_updatesprite(id){
   if(id%100<=1||id%100>=9||id<200||id>900){return}
   let spr=0
   let maindata=getGridData("ma",id)
@@ -700,6 +711,14 @@ function cr_updatesprite(id){
   getGridData("ma",id).wire_sprite=spr
   refreshtile("ma",id)
 }
+function ma_updatesprites(){
+  for (ly=200;ly<=800;ly+=100){
+    for (lx=2;lx<=8;lx++){
+      ma_updatesprite(lx+ly)
+    }
+  }
+}
+
 
 function ma_r(v){
   return Math.floor(
@@ -763,6 +782,7 @@ function ma_setcomponent(x,y,type){
 
 
 addLayer("ma", {
+  branches: ["fa"],
   name: "machine design",
   symbol: "MA",
   startData() {
@@ -829,9 +849,15 @@ addLayer("ma", {
         }
         layers.ma.paused=!layers.ma.paused
       },
-      style() {return{
-        "height":"30px"
-      }}
+      style(){
+        return {
+          "min-height": "0px",
+          "height": "30px",
+          "border-radius": "0px",
+          "margin": "1px",
+          "background-color": layers.ma.paused?"#ff0000":undefined
+        }
+      }
     },
     12: {
       title:function(){return layers.ma.fastfwd?"fastforwarded":"normal"},
@@ -839,9 +865,15 @@ addLayer("ma", {
       onClick(){
         layers.ma.fastfwd=!layers.ma.fastfwd
       },
-      style() {return{
-        "height":"30px"
-      }}
+      style(){
+        return {
+          "min-height": "0px",
+          "height": "30px",
+          "border-radius": "0px",
+          "margin": "1px",
+          "background-color": layers.ma.fastfwd?"#00ffff":undefined
+        }
+      }
     },
     13: {
       title:function(){return "clear"},
@@ -849,9 +881,14 @@ addLayer("ma", {
       onClick(){
         ma_refresh_data()
       },
-      style() {return{
-        "height":"30px"
-      }}
+      style(){
+        return {
+          "min-height": "0px",
+          "height": "30px",
+          "border-radius": "0px",
+          "margin": "1px",
+        }
+      }
     }
   },
   grid: {
@@ -894,7 +931,7 @@ addLayer("ma", {
           }
           for(lx=2;lx<=8;lx++){
             for(ly=200;ly<=800;ly+=100){
-              cr_updatesprite(lx+ly)
+              ma_updatesprite(lx+ly)
             }
           }
         }else{
@@ -918,11 +955,11 @@ addLayer("ma", {
           data.pulleddirs={}
         }
       }
-      cr_updatesprite(id)
+      ma_updatesprite(id)
       for (let l=0;l<=3;l++){
         let o=cr_orderofchecks[l]
         //console.log(l,o.x,o.y,id+o.x+o.y*100)
-        cr_updatesprite(id+o.x+o.y*100)
+        ma_updatesprite(id+o.x+o.y*100)
       }
     },
     getStyle(data,id){
@@ -1019,7 +1056,11 @@ addLayer("ma", {
         ["display-text",function(){return ma_error_message}],
         ["bar",["tick"]],
         ["row",[
-          "clickables",
+          ["clickable",11],
+          ["clickable",12],
+          ["clickable",13],
+        ]],
+        ["row",[
           ["layer-proxy",["pg",
             [
               "grid"
@@ -1037,5 +1078,6 @@ addLayer("ma", {
         ]]
       ]
     }
-  }
+  },
+  layerShown(){return cr_getobj("responsive dust").haveseen},
 })

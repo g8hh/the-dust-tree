@@ -4,8 +4,9 @@ var layoutInfo = {
 	showTree: true,
 
     treeLayout: [
-      ["co","cr"],
-      ["blank","blank","ma"]
+      ["co","blank-co-cr","cr"],
+      ["blank","blank","blank","ma"],
+      ["blank","blank","fa"]
     ]
 
     
@@ -15,6 +16,10 @@ var layoutInfo = {
 // A "ghost" layer which offsets other layers in the tree
 addNode("blank", {
     layerShown: "ghost",
+}, 
+)
+addNode("blank-co-cr", {
+    layerShown(){return player.co.lifetime_scrounged.gte(50)?"ghost":false},
 }, 
 )
 

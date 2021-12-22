@@ -427,4 +427,4 @@ var interval = setInterval(function() {
 	ticking = false
 }, 50)
 
-setInterval(function() {needCanvasUpdate = true}, 500)
+setInterval(function() {needCanvasUpdate = true}, 125)

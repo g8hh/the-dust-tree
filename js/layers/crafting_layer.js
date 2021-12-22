@@ -47,9 +47,8 @@ cr_startdata={
   scroungeable_dust: new Decimal("2e6"),
   unlocked: true,
   selected: "",
-  items: {}
+  items: {},
 }
-
 for ([column,resources] of Object.entries(cr_data.resources)){
   for ([row,resource] of Object.entries(resources)){
     let id=""+(Number(column)+Number(row)+1)
@@ -182,13 +181,14 @@ function cr_getresult(ing1,ing2){
 cr_t=0
 
 let data={
-    name: "crafting", // This is optional, only used in a few places, If absent it just uses the layer id.
-    symbol: "CR", // This appears on the layer's node. Default is the id with the first letter capitalized
-    position: 0, // Horizontal position within a row. By default it uses the layer id and sorts in alphabetical order
-    startData() { return cr_startdata},
-    color: "#b9bffb",
-    type: "none",
-    row: 0, // Row the layer is in on the tree (0 is the first row)
+  name: "crafting", // This is optional, only used in a few places, If absent it just uses the layer id.
+  symbol: "CR", // This appears on the layer's node. Default is the id with the first letter capitalized
+  position: 0, // Horizontal position within a row. By default it uses the layer id and sorts in alphabetical order
+  startData() { return cr_startdata},
+  color: "#b9bffb",
+  type: "none",
+  row: 0, // Row the layer is in on the tree (0 is the first row)
+  branches: ["ma"],
     hotkeys: [],
     update(diff){
       cr_t+=diff
@@ -277,15 +277,19 @@ let data={
             cr_setitem(id,cr_getitem(id).add(999))
           }
         }
-      }
+      },
+      _layerShown(){
+        return "ghost"
+        //layerShown(){return "ghost";player.co.lifetime_scrounged.gte(30)?true:"ghost"},
+      },
+      layerShown: "ghost"
     },
     tabFormat: [
       ["row",[
       ["clickable",11],
       ["clickable",12],
-      ["blank",100,100],
+      ["blank",["50px","50px"]],
       ["clickable",13],
-      ["blank","0px","20px"],
       ["clickable",44],
       ]],
       "grid"
@@ -374,7 +378,7 @@ let data={
           return title
       },
     },
-    layerShown(){return true},
+    layerShown(){return player.co.lifetime_scrounged.gte(50)},
 }
 
 sigamount=0
