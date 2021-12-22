@@ -22,5 +22,27 @@ function LightenDarkenColor(col,amt) {
   if ( g > 255 ) g = 255;
   else if  ( g < 0 ) g = 0;
 
-  return (usePound?"#":"") + (g | (b << 8) | (r << 16)).toString(16);
+  g= (g | (b << 8) | (r << 16)).toString(16)
+  g=(usePound?"#":"") + g;
+
+  return g
+}
+
+function rgbToHex(r,g,b) {
+  r = Math.round(r).toString(16);
+  g = Math.round(g).toString(16);
+  b = Math.round(b).toString(16);
+
+  if (r.length == 1)
+    r = "0" + r;
+  if (g.length == 1)
+    g = "0" + g;
+  if (b.length == 1)
+    b = "0" + b;
+
+  return "#" + r + g + b;
+}
+
+function snap(v,s){
+  return Math.floor(v/s)*s
 }
