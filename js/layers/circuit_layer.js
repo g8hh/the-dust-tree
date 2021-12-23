@@ -1122,6 +1122,19 @@ addLayer("ma", {
         is >=1.
         `],
         ["display-image",["./guide_3_E.png"]],
+        ["display-text",`
+        each sort of dust continously emits one kind of signal. this phenomenon is not well understood,
+        but it is absolutely a critical part of your arsenal.`],
+        ["display-image",["./guide_4_E.png"]],
+        ["display-text",`
+        signal dynamics are a confusing thing. the entire concept of responsive dust carrying almost any integer
+        is even less understood. a signal, unless there is a cable to move along or a slate to comsume it, will remain
+        stationary, retaining its exact value. signals will travel along every single path available to them, so a prepared slate
+        will not be able to rip a signal from its path if it still has a cable to move along, but it will still receive its value.
+        signals will also pass between directly connected gates. a strange element of signal dynamics is that stationary signals
+        will hold up flow, with each signal taking up exactly one cable's worth of space, but for the most part this has proven useful.
+        `],
+        ["display-image",["./guide_5_E.png"]],
       ]
     }
   },
