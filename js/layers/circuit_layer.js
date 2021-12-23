@@ -1103,6 +1103,26 @@ addLayer("ma", {
           ]
         ]]
       ]
+    },
+    docs: {
+      content:[
+        ["display-text",`
+        the logic slate has two modes, depending on how the signals going into it collide.
+        if signals collide head on, the outputs on the top and bottom are given as
+        a NAND b, whereas if they collide at an angle, it is instead that each signal continues,
+        with the signal perpendicular to it subtracted from it.
+        (if there aren't exactly two signals, then the gate remains idle until there are.)`],
+        ["display-image",["./guide_1_E.png"]],
+        ["display-text","the cross slate crosses signals, effectively acting like two cables in one space."],
+        ["display-image",["./guide_2_E.png"]],
+        ["display-text",`
+        the togglable slate, contrary to popular belief, does not toggle, because i'm bad
+        at naming things. it does however, allow you to conditionally send signals. if two signals
+        meet perpendicularly, then each signal will only be sent through if the perpendicular value
+        is >=1.
+        `],
+        ["display-image",["./guide_3_E.png"]],
+      ]
     }
   },
   layerShown(){return cr_getobj("responsive dust").haveseen},

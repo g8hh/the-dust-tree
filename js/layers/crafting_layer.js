@@ -379,7 +379,7 @@ let data={
       },
     },
     layerShown(){return player.co.lifetime_scrounged.gte(50)},
-    tooltip(){return "manual crafting "}
+    tooltip(){return "manual crafting"}
 }
 
 sigamount=0
