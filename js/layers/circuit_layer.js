@@ -1112,20 +1112,28 @@ addLayer("ma", {
         a NAND b, whereas if they collide at an angle, it is instead that each signal continues,
         with the signal perpendicular to it subtracted from it.
         (if there aren't exactly two signals, then the gate remains idle until there are.)`],
-        ["display-image",["./guide_1_E.png"]],
+        ["row",[
+          ["display-image",["./guide/guide_1_1_E.png"]],
+          ["blank",10,10],
+          ["display-image",["./guide/guide_1_2_E.png"]],
+        ]],
         ["display-text","the cross slate crosses signals, effectively acting like two cables in one space."],
-        ["display-image",["./guide_2_E.png"]],
+        ["display-image",["./guide/guide_2_1_E.png"]],
         ["display-text",`
         the togglable slate, contrary to popular belief, does not toggle, because i'm bad
         at naming things. it does however, allow you to conditionally send signals. if two signals
         meet perpendicularly, then each signal will only be sent through if the perpendicular value
         is >=1.
         `],
-        ["display-image",["./guide_3_E.png"]],
+        ["row",[
+          ["display-image",["./guide/guide_3_1_E.png"]],
+          ["blank",10,10],
+          ["display-image",["./guide/guide_3_2_E.png"]],
+        ]],
         ["display-text",`
         each sort of dust continously emits one kind of signal. this phenomenon is not well understood,
         but it is absolutely a critical part of your arsenal.`],
-        ["display-image",["./guide_4_E.png"]],
+        ["display-image",["./guide/guide_4_1_E.png"]],
         ["display-text",`
         signal dynamics are a confusing thing. the entire concept of responsive dust carrying almost any integer
         is even less understood. a signal, unless there is a cable to move along or a slate to comsume it, will remain
@@ -1135,8 +1143,23 @@ addLayer("ma", {
         this is strange, as stationary signals will hold up flow, with each signal taking up exactly one cable's worth of space,
         which is certainly more than a slate could possibly contian.
         `],
-        ["display-image",["./guide_5_E.png"]],
-      ]
+        ["row",[
+          ["display-image",["./guide/guide_5_1_E.png"]],
+          ["blank",10,10],
+          ["display-image",["./guide/guide_5_2_E.png"]],
+        ]],
+        ["blank",3,3],
+        ["row",[
+          ["display-image",["./guide/guide_5_3_E.png"]],
+          ["blank",10,10],
+          ["display-image",["./guide/guide_5_4_E.png"]],
+        ]],
+      ],
+      style:{
+        "margin":"0px",
+        "border-width":"4px",
+        "border-color":"white"
+      }
     }
   },
   layerShown(){return cr_getobj("responsive dust").haveseen},
