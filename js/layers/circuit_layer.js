@@ -1131,8 +1131,9 @@ addLayer("ma", {
         is even less understood. a signal, unless there is a cable to move along or a slate to comsume it, will remain
         stationary, retaining its exact value. signals will travel along every single path available to them, so a prepared slate
         will not be able to rip a signal from its path if it still has a cable to move along, but it will still receive its value.
-        signals will also pass between directly connected gates. a strange element of signal dynamics is that stationary signals
-        will hold up flow, with each signal taking up exactly one cable's worth of space, but for the most part this has proven useful.
+        signals will also pass between directly connected slates, this seems to be because each slate has an internal buffer. 
+        this is strange, as stationary signals will hold up flow, with each signal taking up exactly one cable's worth of space,
+        which is certainly more than a slate could possibly contian.
         `],
         ["display-image",["./guide_5_E.png"]],
       ]
