@@ -175,5 +175,6 @@ addLayer("fa_designer",{
       refreshtile("fa_designer",id)
     },
     onHold(data,id){this.onClick(data,id)}
-  }
+  },
+  tooltip(){return "expand the factory"}
 })

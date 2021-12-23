@@ -127,10 +127,10 @@ class MA_port extends MA_component {
   clear(){
     switch (this.mode){
       case "I":
-        if(this.port>=ma_inputports.length)this.port=ma_inputports.length-1
+        if(this.port>=player.ma.inputports.length)this.port=player.ma.inputports.length-1
         break
       case "O":
-        if(this.port>=ma_outputports.length)this.port=ma_outputports.length-1
+        if(this.port>=player.ma.outputports.length)this.port=player.ma.outputports.length-1
         break
     }
     this.portindex=0
@@ -148,21 +148,25 @@ class MA_port extends MA_component {
       background-color:#22222244;
       "></div>${this.port} ${
         this.mode=="I"?
-        ma_inputports[this.port].index:
-        ma_outputports[this.port].index
+        player.ma.inputports[this.port]?player.ma.inputports[this.port].index:".":
+        player.ma.outputports[this.port]?player.ma.outputports[this.port].index:"."
       }`
       //${this.port}
     }//data.cooldown/data.maxcooldown
   }
   updateoutput(){
-    let port=ma_inputports[this.port]
+    let port=player.ma.inputports[this.port]
+    if(!port)this.port=0;port=player.ma.inputports[this.port]
+    if(!port){this.mode="";return}
+
+
     if (port.index>=port.data.length){ma_cooldown=ma_maxcooldown}
     this.outbox=[]
     this.outbox[this.targport]=port.data[port.index]
   }
   on_pull() {
     if (this.mode=="I"){
-      let port=ma_inputports[this.port]
+      let port=player.ma.inputports[this.port]
       port.index+=1
       this.updateoutput()//peek end value
       this.pulled=true
@@ -188,7 +192,7 @@ class MA_port extends MA_component {
     }else if (this.mode=="O"){
       if (this.neighbor(this.targport).peek(this.targport)!==undefined){
         let v=this.neighbor(this.targport).pull(this.targport)
-        let port=ma_outputports[this.port]
+        let port=player.ma.outputports[this.port]
         let exv=port.data[port.index]
         if (exv==v){
           port.index+=1
@@ -341,12 +345,14 @@ class MA_togglable_slate extends MA_slate_base {
       for (l=0;l<=3;l++){
         if (this.neighbor(l).peek(l)!==undefined){
           rd.push(l)
-          rv.push(this.neighbor(l).pull(l))
         }
       }
-      if (rd[0]%2==rd[1]%2){//shape | (values directly collide)
-      }else{//shape L (values collide at an angle)
-        console.log("L  ")
+      if(!(rd[0]%2==rd[1]%2)){
+        for (l=0;l<=3;l++){
+          if (this.neighbor(l).peek(l)!==undefined){
+            rv.push(this.neighbor(l).pull(l))
+          }
+        }
         for (l=0;l<=1;l++){
           if(this.neighbor(this.rotate(rd[l],2)).component_type!==""){
             if(rv[1-l]>0){
@@ -444,6 +450,33 @@ class MA_responsive_cable extends MA_component {
   }
 }
 
+function ma_ticksim(){
+  for(ly=0;ly<=8;ly++){
+    for(lx=0;lx<=8;lx++){
+      let c=ma_getcomponent(lx,ly)
+      if (c.preprocess)c.preprocess()//no pulls or pushes should happen here
+    }
+  }
+  for(ly=0;ly<=8;ly++){
+    for(lx=0;lx<=8;lx++){
+      let c=ma_getcomponent(lx,ly)
+      if (c.process)c.process()
+    }
+  }
+  
+  for(ly=0;ly<=8;ly++){
+    for(lx=0;lx<=8;lx++){
+      let c=ma_getcomponent(lx,ly)
+      if (c.postprocess)c.postprocess()
+      for ([k,v] of Object.entries(c._newstate)){
+        c[k]=v
+      }
+      c._newstate={}
+      refreshtile("ma",lx+ly*100+101)
+    }
+  }
+}
+
 //updates the connected wire sprites
 cr_orderofchecks=[
   {x: 1,y: 0,c:">"},
@@ -528,6 +561,24 @@ ma_puzzledata={
       return {i:[[a],[b]],o:[[a+b]]}
     },
     rtests_required: 47
+  },
+  201: {
+    title: "switch",
+    desc: "if I2<=0, send I0 to O0, else send I1 to O0",
+    inputs: [
+      [14],
+      [123],
+      [1],
+      [0]
+    ],
+    outputs: [[123]],
+    randomized_test(){
+      let a=ma_r(99)
+      let b=ma_r(99)
+      let c=ma_r(1)
+      return {i:[[a],[b],[c],[]],o:[[c>0?b:a]]}
+    },
+    rtests_required: 47
   }
 }
 
@@ -536,39 +587,34 @@ ma_error_message=""
 ma_maxcooldown=20
 ma_cooldown=0
 
-ma_inputports=[
-  {data:[0,1,0,1],index:0},
-  {data:[0,0,1,1],index:0},
-]
-ma_outputports=[
-  {data:[1,1,1,0],index:0},
-]
-
 function ma_loadpuzzle(id){
+  console.log("loading",id)
   let puz=ma_puzzledata[id]
-  ma_inputports=[]
+  console.log(puz.title)
+  player.ma.inputports=[]
   for (l=0;l<puz.inputs.length;l++){
-    ma_inputports[l]={data:[...puz.inputs[l]],index:0}
+    player.ma.inputports[l]={data:[...puz.inputs[l]],index:0}
   }
-  ma_outputports=[]
+  player.ma.outputports=[]
   for (l=0;l<puz.outputs.length;l++){
-    ma_outputports[l]={data:[...puz.outputs[l]],index:0}
+    player.ma.outputports[l]={data:[...puz.outputs[l]],index:0}
   }
   for(let t=0;t<puz.rtests_required;t++){
     let test=puz.randomized_test()
     for (let il=0;il<test.i.length;il++){
       for (let l=0;l<test.i[il].length;l++){
-        ma_inputports[il].data.push(test.i[il][l])
+        player.ma.inputports[il].data.push(test.i[il][l])
       }
     }
     for (let ol=0;ol<test.o.length;ol++){
       for (let l=0;l<test.o[ol].length;l++){
-        ma_outputports[ol].data.push(test.o[ol][l])
+        player.ma.outputports[ol].data.push(test.o[ol][l])
       }
     }
   }
   ma_refresh_data()
   ma_updatesprites()
+  refreshgrid("pg")
 }
 
 //puzzle tiles
@@ -580,8 +626,8 @@ addLayer("pt",{
     }
   },
   grid: {
-    rows:10,
-    cols:10,
+    rows:8,
+    cols:5,
     getStartData(){return{}},
     getTitle(_,id){
       if (ma_puzzledata[id]){
@@ -600,10 +646,10 @@ addLayer("pt",{
   function ma_getrow(id){
     let col=id%100-1
     let data
-    if (col<ma_inputports.length){
-      data=ma_inputports[col]
+    if (col<player.ma.inputports.length){
+      data=player.ma.inputports[col]
     }else{
-      data=ma_outputports[col-ma_inputports.length]
+      data=player.ma.outputports[col-player.ma.inputports.length]
     }
     return {
       y:Math.floor(id/100)-2,
@@ -624,14 +670,15 @@ addLayer("pt",{
     type: "none",
     row: 0, // Row the layer is in on the tree (0 is the first row)
     grid: {
+      maxCols: 10,
       rows: 6,
-      cols(){return (ma_inputports.length+ma_outputports.length)},
+      cols(){return (player.ma.inputports.length+player.ma.outputports.length)},
       getStartData(){
         return {}
       },
       getDisplay(_,id){
         if (Math.floor(id/100)==1){
-          return (id%100>ma_inputports.length?id%100-ma_inputports.length:id%100)-1
+          return (id%100>player.ma.inputports.length?id%100-player.ma.inputports.length:id%100)-1
         }else{
           let values=ma_getrow(id)
           let y=values.y+values.offset
@@ -648,20 +695,20 @@ addLayer("pt",{
           "border-radius": "0px"
         }
         if (Math.floor(id/100)==1){
-          style["background-color"]=id%100>ma_inputports.length?"#eb7d34":"#3496eb"
+          style["background-color"]=id%100>player.ma.inputports.length?"#eb7d34":"#3496eb"
         }else{
           let values=ma_getrow(id)
           let row=values.y
           let y=values.y+values.offset
           if (y<values.data.length){
-            if (ma_error_message&&(id%100-1==ma_inputports.length+ma_error_port)){
+            if (ma_error_message&&(id%100-1==player.ma.inputports.length+ma_error_port)){
               style["background-color"]="#ff0000"
             }else{
               style["background-color"]=(row%2==0?"#849be4":"#b9bffb")
             }
           }else{
             
-            if (ma_error_message&&(id%100-1==ma_inputports.length+ma_error_port)){
+            if (ma_error_message&&(id%100-1==player.ma.inputports.length+ma_error_port)){
               style["background-color"]="#880000"
             }else{
               style["background-color"]="#222222"
@@ -728,8 +775,8 @@ function ma_r(v){
 
 function ma_refresh_data(){
   ma_cooldown=0
-  for(l=0;l<ma_inputports.length;l++) {ma_inputports[l].index=0}
-  for(l=0;l<ma_outputports.length;l++){ma_outputports[l].index=0}
+  for(l=0;l<player.ma.inputports.length;l++) {player.ma.inputports[l].index=0}
+  for(l=0;l<player.ma.outputports.length;l++){player.ma.outputports[l].index=0}
   for(ly=100;ly<=900;ly+=100){
     for(lx=1;lx<=9;lx++){
       let c=getGridData("ma",lx+ly)
@@ -792,6 +839,8 @@ addLayer("ma", {
       fastfwd:false,
       ticklength: .5,
       simtime: 0, //time incemented in the update loop by diff, will almost never be above ticklength
+      inputports: [],
+      outputports: [],
     }
   },
   type: "none",
@@ -807,34 +856,11 @@ addLayer("ma", {
   },
   update: function(diff){
     player.ma.ticklength=1
-    player.ma.ticklength*=layers.ma.fastfwd?.1:1
+    player.ma.ticklength*=layers.ma.fastfwd?.01:1
     if(!layers.ma.paused)player.ma.simtime+=diff
     for (;player.ma.simtime>player.ma.ticklength;player.ma.simtime-=player.ma.ticklength){
       if (player.subtabs.ma.mainTabs!=="designer"){
-        for(ly=0;ly<=8;ly++){
-          for(lx=0;lx<=8;lx++){
-            let c=ma_getcomponent(lx,ly)
-            if (c.preprocess)c.preprocess()//no pulls or pushes should happen here
-          }
-        }
-        for(ly=0;ly<=8;ly++){
-          for(lx=0;lx<=8;lx++){
-            let c=ma_getcomponent(lx,ly)
-            if (c.process)c.process()
-          }
-        }
-        
-        for(ly=0;ly<=8;ly++){
-          for(lx=0;lx<=8;lx++){
-            let c=ma_getcomponent(lx,ly)
-            if (c.postprocess)c.postprocess()
-            for ([k,v] of Object.entries(c._newstate)){
-              c[k]=v
-            }
-            c._newstate={}
-            refreshtile("ma",lx+ly*100+101)
-          }
-        }
+        ma_ticksim()
       }
     }
   },
@@ -915,14 +941,14 @@ addLayer("ma", {
               break
             case "I":
               data.port+=1
-              if(data.port>=ma_inputports.length){
+              if(data.port>=player.ma.inputports.length){
                 data.port=0
                 data.mode="O"
               }
               break
             case "O":
               data.port+=1
-              if(data.port>=ma_outputports.length){
+              if(data.port>=player.ma.outputports.length){
                 data.port=0
                 data.mode=""
               }
@@ -1080,4 +1106,5 @@ addLayer("ma", {
     }
   },
   layerShown(){return cr_getobj("responsive dust").haveseen},
+  tooltip(){return "machine design"}
 })

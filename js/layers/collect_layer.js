@@ -49,5 +49,6 @@ addLayer("co",{
   tabFormat: [
     "clickables",
     ["bar","currentdust"]
-  ]
+  ],
+  tooltip(){return "dust collection"+(player.co.lifetime_scrounged.gte(1000)?" overview":"")}
 })
