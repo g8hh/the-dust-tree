@@ -1,14 +1,26 @@
 class fa_machine {
 
 }
-class fa_empty {
-  sprite="./empty.png"
+class fa_empty extends fa_machine{
+  constructor(){
+    super()
+    sprite="./empty.png",
+    symblol=""
+  }
 }
-class fa_crafter {
-  sprite="./crafter_E.png"
+class fa_crafter extends fa_machine{
+  constructor(){
+    super()
+    sprite="./crafter_E.png"
+    symblol=""
+  }
 }
-class fa_pipe {
-  sprite="./pipe_E.png"
+class fa_pipe extends fa_machine{
+  constructor(){
+    super()
+    sprite="./pipe_E.png"
+    symblol=""
+  }
 }
 
 
@@ -160,8 +172,8 @@ addLayer("fa_designer",{
         "></div>`
 
       }else{
-        fa_checkfactory(player.fa.pos)
-        return player.fa.factories[player.fa.pos][id]||""
+        let machine=fa_getmachine(id)
+        return ""
       }
     },
     onClick(_,id){
