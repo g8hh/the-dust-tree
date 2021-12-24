@@ -1,5 +1,26 @@
+class fa_machine {
+
+}
+class fa_empty {
+  sprite="./empty.png"
+}
+class fa_crafter {
+  sprite="./crafter_E.png"
+}
+class fa_pipe {
+  sprite="./pipe_E.png"
+}
+
+
 function fa_checkfactory(pos){
   if(!player.fa.factories[pos])player.fa.factories[pos]={}
+  fa_currentfactory=player.fa.factories[pos]
+}
+function fa_getmachine(pos){
+  if (!fa_currentfactory[pos]){
+    return new fa_empty
+  }
+  return fa_currentfactory[pos]
 }
 
 addLayer("fa",{
@@ -108,10 +129,9 @@ addLayer("fa_designer",{
         "border":"0px",
         "background-color":col,
       }
-      if (player.fa.factories[player.fa.pos][id]){
-        style["background-image"]='url("./pipe_E.png")'
-        style["background-size"]="auto 100%"
-      }
+      let machine=fa_getmachine(id)
+      style["background-image"]=`url("${machine.sprite}")`
+      style["background-size"]="auto 100%"
       return style  
     },
     getTitle(_,id){
@@ -152,7 +172,7 @@ addLayer("fa_designer",{
       if (Math.floor(id/100)== 1 && Math.floor(player.fa.pos/100)> 1)player.fa.pos-=100
       if (Math.floor(id/100)==13 && Math.floor(player.fa.pos/100)<20)player.fa.pos+=100
       if (prevpos==player.fa.pos){
-        player.fa.factories[player.fa.pos][id]="abc"
+        player.fa.factories[player.fa.pos][id]=new fa_crafter(player.fa.pos,id)
       }
 
       fa_checkfactory(player.fa.pos)
