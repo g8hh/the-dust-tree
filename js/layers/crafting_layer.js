@@ -271,7 +271,7 @@ let data={
         }
       },
     },
-    layerShown(){return "ghost";player.co.lifetime_scrounged.gte(30)?true:"ghost"},
+    layerShown(){player.co.lifetime_scrounged.gte(30)?true:"ghost"},
     tabFormat: [
       ["row",[
       ["clickable",11],

@@ -123,8 +123,10 @@ class MA_port extends MA_component {
     this.mode=""
     this.port=0
     this.portindex=0
+    this._savevalues=["port","mode"]
   }
   clear(){
+    /*
     switch (this.mode){
       case "I":
         if(this.port>=player.ma.inputports.length)this.port=player.ma.inputports.length-1
@@ -133,6 +135,7 @@ class MA_port extends MA_component {
         if(this.port>=player.ma.outputports.length)this.port=player.ma.outputports.length-1
         break
     }
+    */
     this.portindex=0
     this.pulled=false
   }
@@ -156,8 +159,7 @@ class MA_port extends MA_component {
   }
   updateoutput(){
     let port=player.ma.inputports[this.port]
-    if(!port)this.port=0;port=player.ma.inputports[this.port]
-    if(!port){this.mode="";return}
+    if(!port){return}
 
 
     if (port.index>=port.data.length){ma_cooldown=ma_maxcooldown}
@@ -193,14 +195,16 @@ class MA_port extends MA_component {
       if (this.neighbor(this.targport).peek(this.targport)!==undefined){
         let v=this.neighbor(this.targport).pull(this.targport)
         let port=player.ma.outputports[this.port]
-        let exv=port.data[port.index]
-        if (exv==v){
-          port.index+=1
-        }else{
-          console.log(exv,v,"fail")
-          ma_error_message=`expected ${exv} at ouput ${this.port}, instead got ${v}`
-          ma_error_port=this.port
-          layers.ma.paused=true
+        if(port){
+          let exv=port.data[port.index]
+          if (exv==v){
+            port.index+=1
+          }else{
+            console.log(exv,v,"fail")
+            ma_error_message=`expected ${exv} at ouput ${this.port}, instead got ${v}`
+            ma_error_port=this.port
+            layers.ma.paused=true
+          }
         }
         refreshgrid("pg")
       }
@@ -450,6 +454,21 @@ class MA_responsive_cable extends MA_component {
   }
 }
 
+function ma_fixcomponents(){
+  for(ly=100;ly<=900;ly+=100){
+    for(lx=1;lx<=9;lx++){
+      let c=getGridData("ma",lx+ly)
+      let newc=ma_component_make(c.component_type,lx+ly)
+      if (c._savevalues){
+        for (const value in c._savevalues){
+          newc[value]=c[value]
+        }
+      }
+      if(c)setGridData("ma",lx+ly,newc)
+    }
+  }
+}
+
 function ma_ticksim(){
   for(ly=0;ly<=8;ly++){
     for(lx=0;lx<=8;lx++){
@@ -501,84 +520,120 @@ function ma_bubble(txt){
 //this contains all data for puzzles
 {
 ma_puzzledata={
-  101: {
-    title: "nand",
-    desc: "nand I0 with I1, send to O0",
-    inputs: [
-      [0,0,1,1],
-      [0,1,0,1]
-    ],
-    outputs: [[1,1,1,0]],
-    randomized_test(){},
-    rtests_required: 0
-  },
-  102: {
-    title: "sub",
-    desc: "subtract I1 from I0, send to O0",
-    inputs: [
-      [12, 0, -50],
-      [ 4, 4,-150]
-    ],
-    outputs: [[8,-4,100]],
-    randomized_test(){
-      let a=ma_r(99)
-      let b=ma_r(99)
-      return {i:[[a],[b]],o:[[a-b]]}
+  100: [
+    {
+      title: "nand",
+      desc: "nand I0 with I1, send to O0",
+      inputs: [
+        [0,0,1,1],
+        [0,1,0,1]
+      ],
+      outputs: [[1,1,1,0]],
+      randomized_test(){},
+      rtests_required: 0
     },
-    rtests_required: 47
-  },
-  103: {
-    title: "low",
-    desc: "send a stream of -2 to O0, one for each input 0",
-    inputs: [[]],//get pushed to all free wires with a blue io port next to them. (order goes up left right bottom)
-    outputs: [[]],//get pulled to fromm all wires with an orange io port next to them. (order goes up left right bottom)
-    randomized_test(){
-      return {i:[[0]],o:[[-2]]}
+    {
+      title: "sub",
+      desc: "subtract I1 from I0, send to O0",
+      inputs: [
+        [12, 0, -50],
+        [ 4, 4,-150]
+      ],
+      outputs: [[8,-4,100]],
+      randomized_test(){
+        let a=ma_r(99)
+        let b=ma_r(99)
+        return {i:[[a],[b]],o:[[a-b]]}
+      },
+      rtests_required: 47
     },
-    rtests_required: 50
-  },
-  104: {
-    title: "high",
-    desc: "send a stream of +2 to O0, one for each input 0",
-    inputs: [[]],//get pushed to all free wires with a blue io port next to them. (order goes up left right bottom)
-    outputs: [[]],//get pulled to fromm all wires with an orange io port next to them. (order goes up left right bottom)
-    randomized_test(){
-      return {i:[[0]],o:[[2]]}
+  ],
+  200: [
+    {
+      title: "low",
+      desc: "send a stream of -2 to O0, one for each input 0",
+      inputs: [[]],//get pushed to all free wires with a blue io port next to them. (order goes up left right bottom)
+      outputs: [[]],//get pulled to fromm all wires with an orange io port next to them. (order goes up left right bottom)
+      randomized_test(){
+        return {i:[[0]],o:[[-2]]}
+      },
+      rtests_required: 50
     },
-    rtests_required: 50
-  },
-  105: {
-    title: "add",
-    desc: "add I0 to I1, send to O0",
-    inputs: [
-      [ 4,-8, 4],
-      [90, 4,-8]
-    ],
-    outputs: [[94,-4,-4]],
-    randomized_test(){
-      let a=ma_r(99)
-      let b=ma_r(99)
-      return {i:[[a],[b]],o:[[a+b]]}
+    {
+      title: "high",
+      desc: "send a stream of +2 to O0, one for each input 0",
+      inputs: [[]],//get pushed to all free wires with a blue io port next to them. (order goes up left right bottom)
+      outputs: [[]],//get pulled to fromm all wires with an orange io port next to them. (order goes up left right bottom)
+      randomized_test(){
+        return {i:[[0]],o:[[2]]}
+      },
+      rtests_required: 50
     },
-    rtests_required: 47
-  },
-  201: {
-    title: "switch",
-    desc: "if I2<=0, send I0 to O0, else send I1 to O0",
-    inputs: [
-      [14],
-      [123],
-      [1],
-      [0]
-    ],
-    outputs: [[123]],
-    randomized_test(){
-      let a=ma_r(99)
-      let b=ma_r(99)
-      let c=ma_r(1)
-      return {i:[[a],[b],[c],[]],o:[[c>0?b:a]]}
+    {
+      title: "filter",
+      desc: "send only values from I0 greater than 0 to O0",
+      inputs: [[]],
+      outputs: [[]],
+      randomized_test(){
+        let v=ma_r(99)
+        return {i:[[v]],o:[v>0?[v]:[]]}
+      },
+      rtests_required: 50
     },
-    rtests_required: 47
+    {
+      title: "negate negatives",
+      desc: "convert each negative number into zero.",
+      inputs: [[]],
+      outputs: [[]],
+      randomized_test(){
+        let v=ma_r(99)
+        return {i:[[v]],o:[[v<=0?0:v]]}
+      },
+      rtests_required: 50
+    },
+    {
+      title: "add",
+      desc: "add I0 to I1, send to O0",
+      inputs: [
+        [ 4,-8, 4],
+        [90, 4,-8]
+      ],
+      outputs: [[94,-4,-4]],
+      randomized_test(){
+        let a=ma_r(99)
+        let b=ma_r(99)
+        return {i:[[a],[b]],o:[[a+b]]}
+      },
+      rtests_required: 47
+    },
+  ],
+  300:[
+    {
+      title: "switch",
+      desc: "if I2<=0, send I0 to O0, else send I1 to O0",
+      inputs: [
+        [14],
+        [123],
+        [1],
+        [0]
+      ],
+      outputs: [[123]],
+      randomized_test(){
+        let a=ma_r(99)
+        let b=ma_r(99)
+        let c=ma_r(1)
+        return {i:[[a],[b],[c],[]],o:[[c>0?b:a]]}
+      },
+      rtests_required: 47
+    }
+  ]
+}
+for ([rowi,row] of Object.entries(ma_puzzledata)){
+  console.log(rowi,row)
+  for ([i,v] of Object.entries(row)){
+    let id=Number(rowi)+Number(i)+1
+    console.log(id,v.title)
+    ma_puzzledata[id]=v
   }
 }
 
@@ -634,11 +689,29 @@ addLayer("pt",{
         return ma_puzzledata[id].title
       }
     },
+    style(_,id){
+      return {
+        "background-color": ma_puzzledata[id]?"#ffffff":"#222222"
+      }
+    },
     onClick(_,id){
-      ma_loadpuzzle(id)
+      if (ma_puzzledata[id]){
+        ma_loadpuzzle(id)
+      }
     }
   }
 })  
+}
+
+function ma_checkwin(){
+  let win=true
+  for (let l=0;l<player.ma.outputports.length;l++){
+    let port=player.ma.outputports[l]
+    if (!port.portindex>=port.data.length){
+      win=false
+    }
+  }
+  player.ma.puzzledone=win
 }
 
 //puzzle IO display
@@ -788,6 +861,8 @@ function ma_refresh_data(){
     }
   }
   refreshgrid("pg")
+  ma_updatesprites()
+
 }
 
 function ma_component_make(type,id){
@@ -828,26 +903,59 @@ function ma_setcomponent(x,y,type){
   
   addLayer("blueprints",{
     name: "machine design",
-    symbol: "MA",
+    symbol: "bl",
     type: "none",
     color: "#ffd541",
     startData() {
       return {
-        bpdata: [],
+        bpdata: {},
+        bporder: [],
         points: new Decimal(0),
+        selected: -1,
+      }
+    },
+    clickables:{
+      11:{
+        canClick:true,
+        onClick(){
+          let blueprint_val=player.blueprints.bporder[player.blueprints.selected]
+          if (blueprint_val){
+            let data=player.blueprints.bpdata[blueprint_val]
+            for (const [pos,component] of Object.entries(data.tiles)){
+              setGridData("ma",pos,component)
+            }
+            ma_fixcomponents()
+            ma_refresh_data()
+          }
+        }
       }
     },
     grid: {
       getStartData(){return""},
       cols: 5,
       maxRows: 100,
-      rows: function(){return Math.max(Math.ceil(player.blueprints.bpdata.length/5)+2,1)},
+      rows: function(){return Math.max(Math.ceil(player.blueprints.bporder.length/5)+2,1)},
+      onClick(_,id){
+        id-=101
+        let i=Math.floor(id/100)*5+id%100
+        if(player.blueprints.selected!==i){
+          player.blueprints.selected=i
+        }else{
+          player.blueprints.selected=-1
+        }
+
+      },
       getStyle(_,id){
         id-=101
         let i=Math.floor(id/100)*5+id%100
         return {
-          "background-color":player.blueprints.bpdata[i]?"#ff0000":"#222222"
+          "background-color":player.blueprints.bporder[i]?"#ff0000":"#222222"
         }
+      },
+      getTitle(_,id){
+        id-=101
+        let i=Math.floor(id/100)*5+id%100
+        return player.blueprints.bporder[i]
       },
     },
     
@@ -870,6 +978,7 @@ addLayer("ma", {
       simtime: 0, //time incemented in the update loop by diff, will almost never be above ticklength
       inputports: [],
       outputports: [],
+      blueprint_name: "blueprint",
     }
   },
   type: "none",
@@ -894,6 +1003,7 @@ addLayer("ma", {
     }
   },
   clickables:{
+    //play/pause
     11: {
       title:function(){return layers.ma.paused?"paused":"playing"},
       canClick() {return true},
@@ -913,7 +1023,7 @@ addLayer("ma", {
           "background-color": layers.ma.paused?"#ff0000":undefined
         }
       }
-    },
+    },//fast forward (x100)
     12: {
       title:function(){return layers.ma.fastfwd?"fastforwarded":"normal"},
       canClick() {return true},
@@ -929,7 +1039,7 @@ addLayer("ma", {
           "background-color": layers.ma.fastfwd?"#00ffff":undefined
         }
       }
-    },
+    },//clear state (signals, puzzle progress)
     13: {
       title:function(){return "clear"},
       canClick() {return true},
@@ -944,6 +1054,63 @@ addLayer("ma", {
           "margin": "1px",
         }
       }
+    },//delete
+    21: {
+      canClick:true,
+      onClick(){
+        for(ly=100;ly<=900;ly+=100){
+          for(lx=1;lx<=9;lx++){
+            let obj
+            let id=lx+ly
+            if (id%100==1||id%100==9||id<200||id>=900){
+              obj = new MA_port(id)
+            }else{
+              obj = new MA_null(id)
+            }
+            setGridData("ma",id,obj)
+
+          }
+        }
+      },
+      style(){
+        return {
+          "background-image":"url(./bin_E.png)",
+          "background-size":"auto 100%",
+          "background-position": "0%",
+          "width":"60px",
+          "min-height":"60px",
+          "height":"60px"
+        }
+      },
+    },//save
+    22: {
+      canClick:true,
+      onClick(){
+        ma_refresh_data()
+        let newdata={tiles:{}}
+        for(ly=100;ly<=900;ly+=100){
+          for(lx=1;lx<=9;lx++){
+            let obj
+            let id=lx+ly
+            newdata.tiles[id]=getGridData("ma",id)
+
+          }
+        }
+        player.blueprints.bpdata[player.ma.blueprint_name]=newdata
+        if (!player.blueprints.bporder.includes(player.ma.blueprint_name)){
+          player.blueprints.bporder.push(player.ma.blueprint_name)
+        }
+      },
+      style(){
+        return {
+          "background-image":"url(./save_E.png)",
+          "background-size":"auto 100%",
+          "background-position": "0%",
+          "width":"60px",
+          "min-height":"60px",
+          "height":"60px"
+        }
+      },
     }
   },
   grid: {
@@ -1087,6 +1254,11 @@ addLayer("ma", {
   tabFormat: {
     designer: {
       content:[
+        ["row",[
+          ["clickable",21],
+          ["clickable",22],
+          ["strict-text-input","blueprint_name"],
+        ]],
         "grid",
         ["layer-proxy",["cr",
         [
@@ -1137,9 +1309,16 @@ addLayer("ma", {
       content: [
         "grid",
         ["display-text","all current blueprints:"],
+        ["display-text",function(){
+          let selected=player.blueprints.bporder[player.blueprints.selected]
+          return selected||"nothing currently selected."
+
+        }],
         ["layer-proxy",["blueprints",
             [
-              "grid"
+
+              ["clickable",11],
+              "grid",
             ]
           ]]
       ]

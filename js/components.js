@@ -379,7 +379,7 @@ function loadVue() {
 	Vue.component('grid', {
 		props: ['layer', 'data'],
 		template: `
-		<div v-if="tmp[layer].grid" class="upgTable">
+		<div v-if="tmp[layer].grid" class="upgTable" :id="layer+'_grid'">
 			<div v-for="row in (data === undefined ? tmp[layer].grid.rows : data)" class="upgRow">
 				<div v-for="col in tmp[layer].grid.cols"><div v-if="run(layers[layer].grid.getUnlocked, layers[layer].grid, row*100+col)"
 					class="upgAlign" v-bind:style="{'margin': '1px',  'height': 'inherit',}">
@@ -573,6 +573,14 @@ function loadVue() {
 			v-on:change="player[layer][data] = toValue(document.getElementById('input-' + layer + '-' + data).value, player[layer][data])">
 		`
 	})
+
+	Vue.component('strict-text-input', {
+    props: ['layer', 'data', 'defaultValue'],
+    template: `
+        <input class="instant" :id="'input-' + layer + '-' + data" :value="player[layer][data].toString()" v-on:focus="focused(true)" v-on:blur="focused(false)"
+        v-on:change="player[layer][data] = document.getElementById('input-' + layer + '-' + data).value">
+    `
+  })
 
 	// Updates the value in player[layer][data][0]
 	Vue.component('slider', {

@@ -156,14 +156,7 @@ function fixSave() {
     value.amount=new Decimal(value.amount)
   }
   
-  for(ly=100;ly<=900;ly+=100){
-    for(lx=1;lx<=9;lx++){
-      let c=getGridData("ma",lx+ly)
-      let newc=ma_component_make(c.component_type,lx+ly)
-      if (c.component_type=="port")newc.mode=c.mode,newc.port=c.port
-      if(c)setGridData("ma",lx+ly,newc)
-    }
-  }
+  ma_fixcomponents()
   ma_updatesprites()
   refreshgrid("ma")
 }
