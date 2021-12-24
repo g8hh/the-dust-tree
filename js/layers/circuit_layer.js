@@ -823,7 +823,36 @@ function ma_setcomponent(x,y,type){
   }
 }
 
-
+//blueprints
+{
+  
+  addLayer("blueprints",{
+    name: "machine design",
+    symbol: "MA",
+    type: "none",
+    color: "#ffd541",
+    startData() {
+      return {
+        bpdata: [],
+        points: new Decimal(0),
+      }
+    },
+    grid: {
+      getStartData(){return""},
+      cols: 5,
+      maxRows: 100,
+      rows: function(){return Math.max(Math.ceil(player.blueprints.bpdata.length/5)+2,1)},
+      getStyle(_,id){
+        id-=101
+        let i=Math.floor(id/100)*5+id%100
+        return {
+          "background-color":player.blueprints.bpdata[i]?"#ff0000":"#222222"
+        }
+      },
+    },
+    
+  })
+}
 
 
 
@@ -1102,6 +1131,17 @@ addLayer("ma", {
             "grid"
           ]
         ]]
+      ]
+    },
+    blueprints:{
+      content: [
+        "grid",
+        ["display-text","all current blueprints:"],
+        ["layer-proxy",["blueprints",
+            [
+              "grid"
+            ]
+          ]]
       ]
     },
     docs: {

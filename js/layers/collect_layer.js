@@ -31,7 +31,17 @@ addLayer("co",{
           }
       },
       onHold(){this.onClick()},
-    }
+    },
+    44: {
+      title: "add 999 to all resources",
+      canClick(){return true},
+      onClick(){
+        for (let id in cr_data.resources){
+          id=Number(id)
+          cr_setitem(id,cr_getitem(id).add(999))
+        }
+      }
+    },
   },
   bars: {
     currentdust: {

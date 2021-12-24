@@ -4,22 +4,22 @@ class fa_machine {
 class fa_empty extends fa_machine{
   constructor(){
     super()
-    sprite="./empty.png",
-    symblol=""
+    this.sprite="./empty.png",
+    this.symbol=""
   }
 }
 class fa_crafter extends fa_machine{
   constructor(){
     super()
-    sprite="./crafter_E.png"
-    symblol=""
+    this.sprite="./crafter_E.png"
+    this.symbol="C"
   }
 }
 class fa_pipe extends fa_machine{
   constructor(){
     super()
-    sprite="./pipe_E.png"
-    symblol=""
+    this.sprite="./pipe_E.png"
+    this.symbol="P"
   }
 }
 
@@ -173,7 +173,7 @@ addLayer("fa_designer",{
 
       }else{
         let machine=fa_getmachine(id)
-        return ""
+        return machine.symbol
       }
     },
     onClick(_,id){
@@ -184,7 +184,7 @@ addLayer("fa_designer",{
       if (Math.floor(id/100)== 1 && Math.floor(player.fa.pos/100)> 1)player.fa.pos-=100
       if (Math.floor(id/100)==13 && Math.floor(player.fa.pos/100)<20)player.fa.pos+=100
       if (prevpos==player.fa.pos){
-        player.fa.factories[player.fa.pos][id]=new fa_crafter(player.fa.pos,id)
+        player.fa.factories[player.fa.pos][id]=new fa_pipe(player.fa.pos,id)
       }
 
       fa_checkfactory(player.fa.pos)
