@@ -1212,7 +1212,7 @@ addLayer("ma", {
         "font-weight": "bold",
         "color": player.subtabs.ma.mainTabs==="simulator"?"#df3e23":"#00000000"
       }
-      if (player.subtabs.ma.mainTabs=="designer"){
+      if (player.subtabs.ma.mainTabs==="simulator"){
         style["background-color"]=(id%100+(Math.floor(id/100)))%2==1?"#36d106":"#87fa23"
       }
       let lrside=id%100==1||id%100==9
