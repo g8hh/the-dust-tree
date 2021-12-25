@@ -455,13 +455,11 @@ class MA_responsive_cable extends MA_component {
 }
 
 function ma_fixcomponents(){
-  console.log("fix!")
   for(ly=100;ly<=900;ly+=100){
     for(lx=1;lx<=9;lx++){
       let c=getGridData("ma",lx+ly)
       let newc=ma_component_make(c.component_type,lx+ly)
       if (c._savevalues){
-        console.log("savevalues",c,c._savevalues)
         for (const i in c._savevalues){
           let value=c._savevalues[i]
           newc[value]=c[value]
@@ -1005,7 +1003,7 @@ addLayer("ma", {
     player.ma.ticklength*=layers.ma.fastfwd?.01:1
     if(!layers.ma.paused)player.ma.simtime+=diff
     for (;player.ma.simtime>player.ma.ticklength;player.ma.simtime-=player.ma.ticklength){
-      if (player.subtabs.ma.mainTabs!=="designer"){
+      if (player.subtabs.ma.mainTabs==="simulator"){
         ma_ticksim()
       }
     }
@@ -1208,11 +1206,11 @@ addLayer("ma", {
         //"image-rendering": "pixelated",
         "background-image": "url(./blank.png)",
         "transition": "all .5s, background-position 0ms, background-size 0ms",
-        "-webkit-text-stroke-width": player.subtabs.ma.mainTabs!=="designer"?"0px":"1px",
+        "-webkit-text-stroke-width": player.subtabs.ma.mainTabs==="simulator"?"0px":"1px",
         "-webkit-text-stroke-color": "black",
         "font-size": "20px",
         "font-weight": "bold",
-        "color": player.subtabs.ma.mainTabs!=="designer"?"#df3e23":"#00000000"
+        "color": player.subtabs.ma.mainTabs==="simulator"?"#df3e23":"#00000000"
       }
       if (player.subtabs.ma.mainTabs=="designer"){
         style["background-color"]=(id%100+(Math.floor(id/100)))%2==1?"#36d106":"#87fa23"
