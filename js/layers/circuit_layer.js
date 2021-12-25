@@ -953,7 +953,8 @@ function ma_setcomponent(x,y,type){
           "background-color":bpname?"#ff0000":"#222222"
         }
         if (player.blueprints.bpdata[bpname]){
-          style["background-image"]=player.blueprints.bpdata[bpname].preview
+          style["background-image"]=`url(${player.blueprints.bpdata[bpname].preview})`
+          style["background-size"]="auto 100%"
         }
         return style
       },
@@ -1093,13 +1094,6 @@ addLayer("ma", {
       onClick(){
         
         ma_refresh_data()
-        let grid=document.getElementById("ma_grid")
-        domtoimage.toPng(grid)
-        .then (function (dataUrl) {
-          console.log(dataUrl)
-          player.blueprints.bpdata[player.ma.blueprint_name].preview=dataUrl
-        })
-        .catch(function (error) {});
         let newdata={tiles:{}}
         for(ly=100;ly<=900;ly+=100){
           for(lx=1;lx<=9;lx++){
@@ -1112,6 +1106,12 @@ addLayer("ma", {
         if (!player.blueprints.bporder.includes(player.ma.blueprint_name)){
           player.blueprints.bporder.push(player.ma.blueprint_name)
         }
+        domtoimage.toPng(document.getElementById("ma_grid")).then(function (dataURL){
+          console.log(dataURL)
+          player.blueprints.bpdata[player.ma.blueprint_name].preview=dataURL
+          refreshtile("blueprints",player.blueprints.bporder.find(player.ma.blueprint_name))
+        })
+        .catch(function (error) {});
       },
       style(){
         return {
