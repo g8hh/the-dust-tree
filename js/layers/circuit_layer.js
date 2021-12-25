@@ -1106,10 +1106,11 @@ addLayer("ma", {
         if (!player.blueprints.bporder.includes(player.ma.blueprint_name)){
           player.blueprints.bporder.push(player.ma.blueprint_name)
         }
-        domtoimage.toPng(document.getElementById("ma_grid")).then(function (dataURL){
+        domtoimage.toJpeg(document.getElementById("ma_grid"),{quality:.2}).then(function (dataURL){
           console.log(dataURL)
           player.blueprints.bpdata[player.ma.blueprint_name].preview=dataURL
-          refreshtile("blueprints",player.blueprints.bporder.find(player.ma.blueprint_name))
+          let i=player.blueprints.bporder.find(player.ma.blueprint_name)
+          refreshtile("blueprints",Math.floor(i/5)*100+i%5)
         })
         .catch(function (error) {});
       },
@@ -1319,6 +1320,11 @@ addLayer("ma", {
     },
     blueprints:{
       content: [
+        ["row",[
+          ["clickable",21],
+          ["clickable",22],
+          ["strict-text-input","blueprint_name"],
+        ]],
         "grid",
         ["display-text","all current blueprints:"],
         ["display-text",function(){
