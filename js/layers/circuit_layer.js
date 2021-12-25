@@ -455,12 +455,15 @@ class MA_responsive_cable extends MA_component {
 }
 
 function ma_fixcomponents(){
+  console.log("fix!")
   for(ly=100;ly<=900;ly+=100){
     for(lx=1;lx<=9;lx++){
       let c=getGridData("ma",lx+ly)
       let newc=ma_component_make(c.component_type,lx+ly)
       if (c._savevalues){
-        for (const value in c._savevalues){
+        console.log("savevalues",c,c._savevalues)
+        for (const i in c._savevalues){
+          let value=c._savevalues[i]
           newc[value]=c[value]
         }
       }
@@ -629,10 +632,8 @@ ma_puzzledata={
   ]
 }
 for ([rowi,row] of Object.entries(ma_puzzledata)){
-  console.log(rowi,row)
   for ([i,v] of Object.entries(row)){
     let id=Number(rowi)+Number(i)+1
-    console.log(id,v.title)
     ma_puzzledata[id]=v
   }
 }
