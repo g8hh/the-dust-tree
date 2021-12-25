@@ -950,7 +950,8 @@ function ma_setcomponent(x,y,type){
         let i=Math.floor(id/100)*5+id%100
         let bpname=player.blueprints.bporder[i]
         let style = {
-          "background-color":bpname?"#ff0000":"#222222"
+          "background-color":bpname?"#ff0000":"#222222",
+          "border":"none",
         }
         if (player.blueprints.bpdata[bpname]){
           style["background-image"]=`url(${player.blueprints.bpdata[bpname].preview})`
@@ -1106,7 +1107,7 @@ addLayer("ma", {
         if (!player.blueprints.bporder.includes(player.ma.blueprint_name)){
           player.blueprints.bporder.push(player.ma.blueprint_name)
         }
-        domtoimage.toJpeg(document.getElementById("ma_grid"),{quality:.2}).then(function (dataURL){
+        domtoimage.toJpeg(document.getElementById("ma_grid"),{quality:1/20}).then(function (dataURL){
           console.log(dataURL)
           player.blueprints.bpdata[player.ma.blueprint_name].preview=dataURL
           let i=player.blueprints.bporder.find(player.ma.blueprint_name)
