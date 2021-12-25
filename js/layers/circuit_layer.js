@@ -948,9 +948,14 @@ function ma_setcomponent(x,y,type){
       getStyle(_,id){
         id-=101
         let i=Math.floor(id/100)*5+id%100
-        return {
-          "background-color":player.blueprints.bporder[i]?"#ff0000":"#222222"
+        let bpname=player.blueprints.bporder[i]
+        let style = {
+          "background-color":bpname?"#ff0000":"#222222"
         }
+        if (player.blueprints.bpdata[bpname]){
+          style["background-image"]=player.blueprints.bpdata[bpname].preview
+        }
+        return style
       },
       getTitle(_,id){
         id-=101
@@ -1086,14 +1091,21 @@ addLayer("ma", {
     22: {
       canClick:true,
       onClick(){
+        
         ma_refresh_data()
+        let grid=document.getElementById("ma_grid")
+        domtoimage.toPng(grid)
+        .then (function (dataUrl) {
+          console.log(dataUrl)
+          player.blueprints.bpdata[player.ma.blueprint_name].preview=dataUrl
+        })
+        .catch(function (error) {});
         let newdata={tiles:{}}
         for(ly=100;ly<=900;ly+=100){
           for(lx=1;lx<=9;lx++){
             let obj
             let id=lx+ly
             newdata.tiles[id]=getGridData("ma",id)
-
           }
         }
         player.blueprints.bpdata[player.ma.blueprint_name]=newdata
