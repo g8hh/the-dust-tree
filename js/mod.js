@@ -1,11 +1,12 @@
 let modInfo = {
 	name: "The dust-Tree",
-	id: "adewredsyewertfghutyrerwfgdt",
+	id: "thedusttree",
 	author: "chip",
 	pointsName: "useless points",
 	modFiles: [
     "perlin.js",
     "functions.js",
+    "layers/research_layer.js",
     "layers/collect_layer.js",
     "layers/crafting_layer.js",
     "layers/circuit_layer.js",

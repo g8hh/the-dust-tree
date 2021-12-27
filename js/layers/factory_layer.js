@@ -104,7 +104,9 @@ addLayer("fa",{
         ]]]
       ]
     }
-  }
+  },
+  layerShown(){return player.re.upgrades.includes(31)||"ghost"},
+  tooltip(){return "expand the factory"}
 })
 
 //designer
@@ -208,5 +210,4 @@ addLayer("fa_designer",{
     },
     onHold(data,id){this.onClick(data,id)}
   },
-  tooltip(){return "expand the factory"}
 })

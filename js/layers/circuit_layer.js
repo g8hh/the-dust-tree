@@ -925,6 +925,7 @@ function ma_setcomponent(x,y,type){
             }
             ma_fixcomponents()
             ma_refresh_data()
+            blueprint_name=blueprint_val
           }
         }
       }
@@ -972,7 +973,6 @@ function ma_setcomponent(x,y,type){
 
 
 addLayer("ma", {
-  branches: ["fa"],
   name: "machine design",
   symbol: "MA",
   startData() {
@@ -1285,6 +1285,7 @@ addLayer("ma", {
             ["grid-tile",[303]],
             ["grid-tile",[304]],
             ["grid-tile",[305]],
+            ["grid-tile",[404]],
           ]]
         ]
       ]]
@@ -1399,6 +1400,6 @@ addLayer("ma", {
       }
     }
   },
-  layerShown(){return cr_getobj("responsive dust").haveseen},
+  layerShown(){return player.re.upgrades.includes(21)||"ghost"},
   tooltip(){return "machine design"}
 })

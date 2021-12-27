@@ -5,8 +5,7 @@ var layoutInfo = {
 
     treeLayout: [
       ["co","blank-co-cr","cr"],
-      ["blank","blank","blank","ma"],
-      ["blank","blank","fa"]
+      ["fa","blank","re","blank","ma"],
     ]
 
     
@@ -19,7 +18,7 @@ addNode("blank", {
 }, 
 )
 addNode("blank-co-cr", {
-    layerShown(){return player.co.lifetime_scrounged.gte(50)?"ghost":false},
+  layerShown(){return player.re.upgrades.includes(11)?"ghost":false},
 }, 
 )
 

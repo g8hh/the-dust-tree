@@ -4,7 +4,7 @@
 
 cr_data={
   resources: {
-    100:[
+    100:[//dust stuff
       {name:"dust",c:"#b9bffb"},
       {name:"compressed dust",c:"#849be4"},
       {name:"dust bricks",c:"#b9bffb"},
@@ -12,18 +12,24 @@ cr_data={
       {name:"dust shard",c:"#e3e6ff"},
       {name:"dust pebbles",c:"#849be4"},
     ],
-    200:[
+    200:[//biomass & lively stuff
       {name:"lively dust",c:"#f5a097"},
       {name:"lively pebbles",c:"#f5a097"},
       {name:"lively chunk",c:"#f5a097"},
       {name:"biomass",c:"#14a02e"},
     ],
-    300:[
+    300:[//wire stuff
       {name:"responsive dust",c:"#ffd541"},
       {name:"responsive cable",c:"#e3e6ff"},
       {name:"logic slate",c:"#ffd541"},
       {name:"cross slate",c:"#ffd541"},
       {name:"togglable slate",c:"#ffd541"},
+    ],
+    400:[//qol items
+      {name:"memory chip",c:"#849be4"},
+      {name:"recipe chip",c:"#f5a097"},
+      {name:"blueprint chip",c:"#b9bffb"},
+      {name:"buffer chip",c:"#ffd541"},
     ]
   },
   craft_data:{
@@ -41,6 +47,10 @@ cr_data={
     "responsive dustCengraved bricks":[{a:1,r:"cross slate"}],
     "responsive dustCcross slate":[{a:1,r:"logic slate"}],
     "engraved bricksCcross slate":[{a:1,r:"togglable slate"}],
+    "engraved bricksCdust shard":[{a:1,r:"memory chip"}],
+    "memory chipClively dust":[{a:1,r:"recipe chip"}],
+    "memory chipCdust":[{a:1,r:"blueprint chip"}],
+    "memory chipCresponsive dust":[{a:1,r:"buffer chip"}],
   },
   nameid:{},
 }
@@ -162,13 +172,21 @@ function cr_getcraftstyle(button){
   if (cr_data.resources[id]){
     col=cr_data.resources[id].c
   }
-  let style={"background-color": "#222222"}
+  let style={"background-color": "#222222","border-radius":"10px"}
   if (cr_getitem(itemname)){
     if (cr_getitem(itemname).gt(0)){
       style["background-color"]=col
     }
   }
   return style
+}
+function cr_getgrad(result){
+  let grad=`linear-gradient(${90*3/8}deg,`
+  for(let i=0;i<result.length;i++){
+    grad+=cr_data.resources[cr_data.nameid[result[i].r]].c+" "+Math.floor(i/(result.length)*100)+"%"+","
+    grad+=cr_data.resources[cr_data.nameid[result[i].r]].c+" "+Math.floor((i+1)/(result.length)*100-1)+"%"+((i<result.length-1)?",":")")
+  }
+  return grad
 }
 }
 
@@ -190,7 +208,6 @@ let data={
   color: "#b9bffb",
   type: "none",
   row: 0, // Row the layer is in on the tree (0 is the first row)
-  branches: ["ma"],
     hotkeys: [],
     update(diff){
       cr_t+=diff
@@ -230,15 +247,15 @@ let data={
           let ing1=getClickableState(this.layer,11)
           let ing2=getClickableState(this.layer,12)
           let result=cr_getresult(ing1,ing2)
-          if(!result)return
-          let grad=`linear-gradient(${90*(3/8)}deg,`
-          for(let i=0;i<result.length;i++){
-            grad+=cr_data.resources[cr_data.nameid[result[i].r]].c+" "+Math.floor(i/(result.length)*100)+"%"+","
-            grad+=cr_data.resources[cr_data.nameid[result[i].r]].c+" "+Math.floor((i+1)/(result.length)*100-1)+"%"+((i<result.length-1)?",":")")
+          let grad="#222222"
+          if(result){
+            grad=cr_getgrad(result)
           }
           return {
             "background": grad,
-            "border": "none"
+            "border": "none",
+            "width": "120px",
+            "border-radius": "10px 10px 10px 10px"
           }
         },
         onClick() {
@@ -270,16 +287,58 @@ let data={
           return output
         }
       },
+      14: {
+        canClick() {return cr_getitem("recipe chip").gt(0)},
+        onClick() {
+          cr_subitem("recipe chip",1)
+        },
+        display() {return `save to chip\n(x${cr_getitem("recipe chip")})`},
+        style(){
+          let ing1=getClickableState(this.layer,11)
+          let ing2=getClickableState(this.layer,12)
+          let result=cr_getresult(ing1,ing2)
+          if(!result||cr_getitem("recipe chip").lte(0)){
+            return {
+              "background": "#22222200",
+              "height": "0px",
+              "min-height": "0px",
+              "width": "50px",
+              "border-radius": "0px 1000px 1000px 0px",
+              "overflow":"hidden",
+              "color":"#00000000",
+              "vertical-align":"text-top",
+              "border-width":"0px",
+              "border": "none",
+            }
+          }
+          return {
+            "background": "#b9bffb",
+            "height": "90px",
+            "min-height": "0px",
+            "width":"50px",
+            "border-radius": "0px 10px 10px 0px",
+            "color":"black",
+            "overflow":"hidden",
+            "vertical-align":"text-top",
+            "border-width":"0px",
+            "border": "none",
+          }
+        }
+      },
     },
     layerShown(){player.co.lifetime_scrounged.gte(30)?true:"ghost"},
     tabFormat: [
       ["row",[
-      ["clickable",11],
-      ["clickable",12],
-      ["blank",["50px","50px"]],
-      ["clickable",13],
-      ["clickable",44],
+        ["blank",["50px","1px"]],
+        ["clickable",11],
+        ["clickable",12],
+        ["blank",["50px","50px"]],
+        ["column",[
+        ]],
+        ["clickable",13],
+        ["clickable",14]
       ]],
+      "blank",
       "grid"
     ],
     grid: {
@@ -366,7 +425,7 @@ let data={
           return title
       },
     },
-    layerShown(){return player.co.lifetime_scrounged.gte(50)},
+    layerShown(){return player.re.upgrades.includes(11)},
     tooltip(){return "manual crafting"}
 }
 
