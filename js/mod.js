@@ -5,6 +5,7 @@ let modInfo = {
 	pointsName: "useless points",
 	modFiles: [
     "perlin.js",
+    "fraction.js",
     "functions.js",
     "layers/research_layer.js",
     "layers/collect_layer.js",

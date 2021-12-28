@@ -29,7 +29,7 @@ addLayer("re",{
       fullDisplay:`devise manual crafting aparatus
       <div style="text-align: right">
       &lt;REQ 100 DUST><br>
-      &lt;><br>
+      &lt;USE 30 DUST><br>
       &lt;>
       </div>`,
       style: re_researchstyle,
@@ -39,7 +39,7 @@ addLayer("re",{
       fullDisplay:`devise simulator for logic systems
       <div style="text-align: right">
       &lt;REQ 4 LOGIC SLATE><br>
-      &lt;REQ 10 RESPONSIVE CABLE><br>
+      &lt;USE 10 RESPONSIVE CABLE><br>
       &lt;>
       </div>`,
       style: re_researchstyle,

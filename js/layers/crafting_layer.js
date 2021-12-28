@@ -29,7 +29,7 @@ cr_data={
       {name:"memory chip",c:"#849be4"},
       {name:"recipe chip",c:"#f5a097"},
       {name:"blueprint chip",c:"#b9bffb"},
-      {name:"buffer chip",c:"#ffd541"},
+      {name:"divisive chip",c:"#ffd541"},
     ]
   },
   craft_data:{

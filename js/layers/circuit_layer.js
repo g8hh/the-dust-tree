@@ -83,11 +83,10 @@ class MA_component {
         let l=vals[vl]
         let neighbor_val=this.neighbor(l).peek(l)
         if(neighbor_val!==undefined){
-          if (neighbor_val>lastvalue){
+          if (neighbor_val.gt(lastvalue)){
             lastvalue=neighbor_val
             dir=l
           }
-          if(l==0)console.log(l,dir,neighbor_val,lastvalue)
         }
       }
     }else{
@@ -164,7 +163,7 @@ class MA_port extends MA_component {
 
     if (port.index>=port.data.length){ma_cooldown=ma_maxcooldown}
     this.outbox=[]
-    this.outbox[this.targport]=port.data[port.index]
+    this.outbox[this.targport]=new Fraction(port.data[port.index])
   }
   on_pull() {
     if (this.mode=="I"){
@@ -201,9 +200,9 @@ class MA_port extends MA_component {
             port.index+=1
           }else{
             console.log(exv,v,"fail")
-            ma_error_message=`expected ${exv} at ouput ${this.port}, instead got ${v}`
-            ma_error_port=this.port
-            layers.ma.paused=true
+            player.ma.error_message=`expected ${exv} at ouput ${this.port}, instead got ${v}`
+            player.ma.error_port=this.port
+            player.ma.paused=true
           }
         }
         refreshgrid("pg")
@@ -225,7 +224,7 @@ class MA_slate_base extends MA_component {
     border-radius:10px;
     background-color:#22222244;
     min-width:30px;
-    ">${this.outputcache[0]!==undefined?this.outputcache[0]:""}</div>
+    ">${this.outputcache[0]!==undefined?this.outputcache[0].toFraction(1):""}</div>
     <div style="width:100%;justify-content: center;display:flex">
     <div style="
     position: absolute;
@@ -234,7 +233,7 @@ class MA_slate_base extends MA_component {
     border-radius:10px;
     background-color:#22222244;
     min-width:30px;
-    ">${this.outputcache[1]!==undefined?this.outputcache[1]:""}</div>
+    ">${this.outputcache[1]!==undefined?this.outputcache[1].toFraction(1):""}</div>
     </div>
     <div style="
     position: absolute;
@@ -242,7 +241,7 @@ class MA_slate_base extends MA_component {
     border-radius:10px;
     background-color:#22222244;
     min-width:30px;
-    ">${this.outputcache[2]!==undefined?this.outputcache[2]:""}</div>
+    ">${this.outputcache[2]!==undefined?this.outputcache[2].toFraction(1):""}</div>
     <div style="width:100%;justify-content: center;display:flex">
     <div style="
     position: absolute;
@@ -254,7 +253,7 @@ class MA_slate_base extends MA_component {
     border-radius:10px;
     background-color:#22222244;
     min-width:30px;
-    ">${this.outputcache[3]!==undefined?this.outputcache[3]:""}</div>
+    ">${this.outputcache[3]!==undefined?this.outputcache[3].toFraction(1):""}</div>
     </div>
     `
   }
@@ -309,17 +308,15 @@ class MA_logic_slate extends MA_slate_base {
         }
       }
       if (rd[0]%2==rd[1]%2){//shape | (values directly collide)
-        console.log("|")
         for (l=0;l<=1;l++){
           if(this.neighbor(this.rotate(rd[l],1)).component_type!==""){
-            this.outputcache[this.rotate(rd[l],1)]=!(rv[0]>0&&rv[1]>0)?1:0
+            this.outputcache[this.rotate(rd[l],1)]=new Fraction(!(rv[0]>0&&rv[1]>0)?1:0)
           }
         }
       }else{//shape L (values collide at an angle)
-        console.log("L  ")
         for (l=0;l<=1;l++){
           if(this.neighbor(this.rotate(rd[l],2)).component_type!==""){
-            this.outputcache[this.rotate(rd[l],2)]=rv[l]-rv[1-l]
+            this.outputcache[this.rotate(rd[l],2)]=rv[l].sub(rv[1-l])
           }
         }
       }
@@ -332,20 +329,44 @@ class MA_logic_slate extends MA_slate_base {
     }
   }
 }
-class MA_buffer_chip extends MA_slate_base {
+class MA_divisive_chip extends MA_slate_base {
   constructor(pos){
     super(pos)
-    this.component_type="buffer chip"
+    this.component_type="divisive chip"
     this.outputcache=[]
     this.delays=[]
   }
+  on_pull(dir) {
+    this.outputcache[dir]=undefined
+  }
   process() {
-    for (l=0;l<=3;l++){
-      if (this.outputcache[this.rotate(l,2)]==undefined){
-        let v=this.neighbor(l).peek(l)
-        if (v!==undefined){
-          this.neighbor(l).pull(l)
-          this.outputcache[this.rotate(l,2)]=v
+    if (this.ready_neighbor_count()==2){
+      let rd=[]
+      let rv=[]
+      for (l=0;l<=3;l++){
+        if (this.neighbor(l).peek(l)!==undefined){
+          rd.push(l)
+          rv.push(this.neighbor(l).pull(l))
+        }
+      }
+      if (rd[0]%2==rd[1]%2){//shape | (values directly collide)
+        for (l=0;l<=1;l++){
+          if(this.neighbor(this.rotate(rd[l],1)).component_type!==""){
+            this.outputcache[this.rotate(rd[l],1)]=Math.min(rv[0],rv[1])
+          }
+        }
+      }else{//shape L (values collide at an angle)
+        for (l=0;l<=1;l++){
+          if(this.neighbor(this.rotate(rd[l],2)).component_type!==""){
+            if (rv[1-l].toFraction()=="0"){
+              this.outputcache[this.rotate(rd[l],2)]={toFraction(){return "infini-nan"}}
+              player.ma.paused=!player.ma.paused
+              player.ma.error_port=-1
+              player.ma.error_message="division by 0, when will you learn."
+            }else{
+              this.outputcache[this.rotate(rd[l],2)]=rv[l].div(rv[1-l])
+            }
+          }
         }
       }
     }
@@ -384,7 +405,7 @@ class MA_togglable_slate extends MA_slate_base {
         }
         for (l=0;l<=1;l++){
           if(this.neighbor(this.rotate(rd[l],2)).component_type!==""){
-            if(rv[1-l]>0){
+            if(rv[1-l].gt(0)){
               this.outputcache[this.rotate(rd[l],2)]=rv[l]
             }
           }
@@ -400,10 +421,12 @@ class MA_togglable_slate extends MA_slate_base {
   }
 }//holds the code for all dust, each dust just changes the output and the component name
 class MA_base_dust extends MA_component {
-  constructor(pos){
+  constructor(pos,signal){
     super(pos)
     this.component_type="dust"
     this.pulled=true
+    let v=new Fraction(signal)
+    this.signal=[v,v,v,v]
   }
   title() {
     return ""
@@ -422,23 +445,20 @@ class MA_base_dust extends MA_component {
 }//gives off a signal of +1
 class MA_responsive_dust extends MA_base_dust {
   constructor(pos){
-    super(pos)
+    super(pos,1)
     this.component_type="responsive dust"
-    this.signal=[1,1,1,1]
   }
 }//gives off a signal of  0
 class MA_dust extends MA_base_dust {
   constructor(pos){
-    super(pos)
+    super(pos,0)
     this.component_type="dust"
-    this.signal=[0,0,0,0]
   }
 }//gives off a signal of -1
 class MA_lively_dust extends MA_base_dust {
   constructor(pos){
-    super(pos)
+    super(pos,-1)
     this.component_type="lively dust"
-    this.signal=[-1,-1,-1,-1]
   }
 }
 class MA_responsive_cable extends MA_component {
@@ -448,7 +468,7 @@ class MA_responsive_cable extends MA_component {
   }
   title() {
     return ma_bubble(
-      this.heldvalue!==undefined?this.heldvalue:""
+      this.heldvalue!==undefined?this.heldvalue.toFraction():""
     )
   }
   on_pull(dir) {
@@ -661,8 +681,6 @@ for ([rowi,row] of Object.entries(ma_puzzledata)){
   }
 }
 
-ma_error_port=0
-ma_error_message=""
 ma_maxcooldown=20
 ma_cooldown=0
 
@@ -798,14 +816,14 @@ function ma_checkwin(){
           let row=values.y
           let y=values.y+values.offset
           if (y<values.data.length){
-            if (ma_error_message&&(id%100-1==player.ma.inputports.length+ma_error_port)){
+            if (player.ma.error_message&&(id%100-1==player.ma.inputports.length+player.ma.error_port)){
               style["background-color"]="#ff0000"
             }else{
               style["background-color"]=(row%2==0?"#849be4":"#b9bffb")
             }
           }else{
             
-            if (ma_error_message&&(id%100-1==player.ma.inputports.length+ma_error_port)){
+            if (player.ma.error_message&&(id%100-1==player.ma.inputports.length+player.ma.error_port)){
               style["background-color"]="#880000"
             }else{
               style["background-color"]="#222222"
@@ -907,8 +925,8 @@ function ma_component_make(type,id){
       return new MA_responsive_cable(id)
     case "togglable slate":
       return new MA_togglable_slate(id)
-    case "buffer chip":
-      return new MA_buffer_chip(id)
+    case "divisive chip":
+      return new MA_divisive_chip(id)
     default:
       return new MA_null(id)
   }
@@ -1011,6 +1029,8 @@ addLayer("ma", {
       simtime: 0, //time incemented in the update loop by diff, will almost never be above ticklength
       inputports: [],
       outputports: [],
+      error_message:"",
+      error_port:0,
       blueprint_name: "blueprint",
     }
   },
@@ -1028,7 +1048,7 @@ addLayer("ma", {
   update: function(diff){
     player.ma.ticklength=1
     player.ma.ticklength*=layers.ma.fastfwd?.01:1
-    if(!layers.ma.paused)player.ma.simtime+=diff
+    if(!player.ma.paused)player.ma.simtime+=diff
     for (;player.ma.simtime>player.ma.ticklength;player.ma.simtime-=player.ma.ticklength){
       if (player.subtabs.ma.mainTabs==="simulator"){
         ma_ticksim()
@@ -1038,14 +1058,14 @@ addLayer("ma", {
   clickables:{
     //play/pause
     11: {
-      title:function(){return layers.ma.paused?"paused":"playing"},
+      title:function(){return player.ma.paused?"paused":"playing"},
       canClick() {return true},
       onClick(){
-        if (ma_error_message){
-          ma_error_message=""
+        if (player.ma.error_message){
+          player.ma.error_message=""
           ma_refresh_data()
         }
-        layers.ma.paused=!layers.ma.paused
+        player.ma.paused=!player.ma.paused
       },
       style(){
         return {
@@ -1053,7 +1073,7 @@ addLayer("ma", {
           "height": "30px",
           "border-radius": "0px",
           "margin": "1px",
-          "background-color": layers.ma.paused?"#ff0000":undefined
+          "background-color": player.ma.paused?"#ff0000":undefined
         }
       }
     },//fast forward (x100)
@@ -1279,11 +1299,11 @@ addLayer("ma", {
           let pos=`${-data.wire_sprite*100}% 00%`
           style["background-position"]=pos
           style["background-image"]='url("./togglable_slate_E.png")'
-        }else if (data.component_type=="buffer chip"){
-          style["background-size"]="auto 200%"
+        }else if (data.component_type=="divisive chip"){
+          style["background-size"]="auto 100%"
           let pos=`${-data.wire_sprite*100}% 00%`
           style["background-position"]=pos
-          style["background-image"]='url("./buffer_chip_E.png")'
+          style["background-image"]='url("./divisive_chip_E.png")'
         }else if (data.component_type=="logic slate"){
           let pos=`${-data.wire_sprite*100}% 50%`
           style["background-position"]=pos
@@ -1327,7 +1347,7 @@ addLayer("ma", {
     simulator: {
       content:[
         "grid",
-        ["display-text",function(){return ma_error_message}],
+        ["display-text",function(){return player.ma.error_message}],
         ["bar",["tick"]],
         ["row",[
           ["clickable",11],
