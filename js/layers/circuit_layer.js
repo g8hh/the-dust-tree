@@ -332,6 +332,31 @@ class MA_logic_slate extends MA_slate_base {
     }
   }
 }
+class MA_buffer_chip extends MA_slate_base {
+  constructor(pos){
+    super(pos)
+    this.component_type="buffer chip"
+    this.outputcache=[]
+    this.delays=[]
+  }
+  process() {
+    for (l=0;l<=3;l++){
+      if (this.outputcache[this.rotate(l,2)]==undefined){
+        let v=this.neighbor(l).peek(l)
+        if (v!==undefined){
+          this.neighbor(l).pull(l)
+          this.outputcache[this.rotate(l,2)]=v
+        }
+      }
+    }
+  }
+  postprocess() {
+    this._newstate.outbox=[]
+    for (l=0;l<=3;l++){
+      this._newstate.outbox[l]=this.outputcache[l]
+    }
+  }
+}
 class MA_togglable_slate extends MA_slate_base {
   constructor(pos){
     super(pos)
@@ -882,6 +907,8 @@ function ma_component_make(type,id){
       return new MA_responsive_cable(id)
     case "togglable slate":
       return new MA_togglable_slate(id)
+    case "buffer chip":
+      return new MA_buffer_chip(id)
     default:
       return new MA_null(id)
   }
@@ -1084,7 +1111,7 @@ addLayer("ma", {
           "background-size":"auto 100%",
           "background-position": "0%",
           "width":"60px",
-          "min-height":"60px",
+          "min-height":"0px",
           "height":"60px"
         }
       },
@@ -1120,8 +1147,9 @@ addLayer("ma", {
           "background-size":"auto 100%",
           "background-position": "0%",
           "width":"60px",
-          "min-height":"60px",
-          "height":"60px"
+          "min-height":"0px",
+          "height":"60px",
+          "border-radius": "10px 0px 0px 10px",
         }
       },
     }
@@ -1251,6 +1279,11 @@ addLayer("ma", {
           let pos=`${-data.wire_sprite*100}% 00%`
           style["background-position"]=pos
           style["background-image"]='url("./togglable_slate_E.png")'
+        }else if (data.component_type=="buffer chip"){
+          style["background-size"]="auto 200%"
+          let pos=`${-data.wire_sprite*100}% 00%`
+          style["background-position"]=pos
+          style["background-image"]='url("./buffer_chip_E.png")'
         }else if (data.component_type=="logic slate"){
           let pos=`${-data.wire_sprite*100}% 50%`
           style["background-position"]=pos

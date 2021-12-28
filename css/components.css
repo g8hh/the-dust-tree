@@ -164,10 +164,19 @@
 	border-color: rgba(0, 0, 0, 0.125);
 }
 
-.custom-text-input {
-  background: url("/text_input_E.png");
-  height: 100%;
-  width: 200px;
-  background-color: transparent;
-  color: white;
+#input-ma-blueprint_name{
+	border-radius: 0px 10px 10px 0px;
+	border: 2px solid;
+	border-color: rgba(0, 0, 0, 0.125);
+  background-color: #ffd541;
+  height:54px;
+  min-height:0px;
+	transition-duration: 0.5s !important;
+  z-index: 3000 !important;
+}
+#input-ma-blueprint_name:hover{
+	box-shadow: 0 0 10px var(--points);
+  transform: scale(1.1, 1.1);
+	transition-duration: 0.5s !important;
+  z-index: 3000 !important;
 }
