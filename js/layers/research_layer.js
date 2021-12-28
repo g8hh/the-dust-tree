@@ -45,6 +45,7 @@ addLayer("re",{
       style: re_researchstyle,
     },
     31: {
+      canAfford(){return cr_getitem("dust shard").gte(30)},
       fullDisplay:`devise constuction drone
       <div style="text-align: right">
       &lt;REQ 4 FUNCTIONAL DESIGNS><br>
