@@ -158,6 +158,7 @@ function fixSave() {
   
   ma_fixcomponents()
   ma_updatesprites()
+  fa_fixfactories()
   refreshgrid("ma")
 }
 function fixData(defaultData, newData) {

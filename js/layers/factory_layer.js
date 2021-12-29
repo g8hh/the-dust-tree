@@ -3,18 +3,19 @@ class FA_factory {
     this.tiles=[]
   }
   create(id,type){
-
+    console.log(`creating ${type} at ${id}`)
     this.tiles[id]=fa_createmachine(type)
   }
   getmachine(id){
-    if(!this.tiles[id]){this.create(id,"empty")}
+    if(!this.tiles[id]){this.create(id,"empty");console.log("created!",id)}
     return this.tiles[id]
   }
   update_io(){
+    let outputstring=""
     let checkedtiles=[]
     for (const [pos,machine] of Object.entries(this.tiles)){
       if (machine.name!=="empty"){
-        this.outputstring+=machine.name
+        outputstring+=machine.name
       }
     }
   }
@@ -52,7 +53,29 @@ class FA_pipe extends FA_machine{
     super()
     this.name="pipe"
     this.sprite="./pipe_E.png"
-    this.symbol="P"
+    this.symbol="P"+Math.floor(Math.random()*10)
+  }
+}
+
+function fa_fixfactories(){
+  for (lx=1;lx<=20;lx++){
+    for (ly=1;ly<=20;ly++){
+      let factory=getGridData("fa",lx+ly*100).factory
+      let newfactory=new FA_factory()
+      for (const [key,value] of Object.entries(factory)){
+        newfactory[key]=value
+      }
+      for (const [pos,machine] of Object.entries(newfactory.tiles)){
+        console.log(`fixxed ${pos}`,machine)
+        if(machine){
+          newfactory.tiles[pos]=fa_createmachine(machine.name)
+          for (const [key,value] of Object.entries(machine)){
+            newfactory.tiles[pos][key]=value
+          }
+        }
+      }
+      getGridData("fa",lx+ly*100).factory=newfactory
+    }
   }
 }
 
