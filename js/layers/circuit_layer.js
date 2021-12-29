@@ -224,7 +224,7 @@ class MA_slate_base extends MA_component {
     border-radius:10px;
     background-color:#22222244;
     min-width:30px;
-    ">${this.outputcache[0]!==undefined?this.outputcache[0].toFraction(1):""}</div>
+    ">${this.outputcache[0]!==undefined?this.outputcache[0].toFraction():""}</div>
     <div style="width:100%;justify-content: center;display:flex">
     <div style="
     position: absolute;
@@ -233,7 +233,7 @@ class MA_slate_base extends MA_component {
     border-radius:10px;
     background-color:#22222244;
     min-width:30px;
-    ">${this.outputcache[1]!==undefined?this.outputcache[1].toFraction(1):""}</div>
+    ">${this.outputcache[1]!==undefined?this.outputcache[1].toFraction():""}</div>
     </div>
     <div style="
     position: absolute;
@@ -241,7 +241,7 @@ class MA_slate_base extends MA_component {
     border-radius:10px;
     background-color:#22222244;
     min-width:30px;
-    ">${this.outputcache[2]!==undefined?this.outputcache[2].toFraction(1):""}</div>
+    ">${this.outputcache[2]!==undefined?this.outputcache[2].toFraction():""}</div>
     <div style="width:100%;justify-content: center;display:flex">
     <div style="
     position: absolute;
@@ -253,7 +253,7 @@ class MA_slate_base extends MA_component {
     border-radius:10px;
     background-color:#22222244;
     min-width:30px;
-    ">${this.outputcache[3]!==undefined?this.outputcache[3].toFraction(1):""}</div>
+    ">${this.outputcache[3]!==undefined?this.outputcache[3].toFraction():""}</div>
     </div>
     `
   }
