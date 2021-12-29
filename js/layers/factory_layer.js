@@ -1,39 +1,66 @@
-class fa_machine {
+class FA_factory {
+  constructor(){
+    this.tiles=[]
+  }
+  create(id,type){
 
+    this.tiles[id]=fa_createmachine(type)
+  }
+  getmachine(id){
+    if(!this.tiles[id]){this.create(id,"empty")}
+    return this.tiles[id]
+  }
+  update_io(){
+    let checkedtiles=[]
+    for (const [pos,machine] of Object.entries(this.tiles)){
+      if (machine.name!=="empty"){
+        this.outputstring+=machine.name
+      }
+    }
+  }
 }
-class fa_empty extends fa_machine{
+
+function fa_createmachine(type){
+  if (fa_machinenames[type]){
+    return new fa_machinenames[type]()
+  }
+}
+
+class FA_machine {
+  constructor(){
+
+  }
+}
+class FA_empty extends FA_machine{
   constructor(){
     super()
+    this.name="empty"
     this.sprite="./empty.png",
     this.symbol=""
   }
 }
-class fa_crafter extends fa_machine{
+class FA_crafter extends FA_machine{
   constructor(){
     super()
+    this.name="crafter"
     this.sprite="./crafter_E.png"
     this.symbol="C"
   }
 }
-class fa_pipe extends fa_machine{
+class FA_pipe extends FA_machine{
   constructor(){
     super()
+    this.name="pipe"
     this.sprite="./pipe_E.png"
     this.symbol="P"
   }
 }
 
+fa_machinenames={}
+for (const [_,machine] of Object.entries([FA_pipe,FA_crafter,FA_empty])){
+  fa_machinenames[new machine().name]=machine
+}
 
-function fa_checkfactory(pos){
-  if(!player.fa.factories[pos])player.fa.factories[pos]={}
-  fa_currentfactory=player.fa.factories[pos]
-}
-function fa_getmachine(pos){
-  if (!fa_currentfactory[pos]){
-    return new fa_empty
-  }
-  return fa_currentfactory[pos]
-}
 
 addLayer("fa",{
   name: "factory layer", // This is optional, only used in a few places, If absent it just uses the layer id.
@@ -69,6 +96,7 @@ addLayer("fa",{
         data.col=`rgb(0,${n*64+96},${n*64+192})`
         data.tiletype="water"
       }
+      data.factory=new FA_factory()
       return data
     },
     getStyle(data,id){
@@ -85,7 +113,6 @@ addLayer("fa",{
     onClick(data,id){
       player.fa.pos=id
       player.subtabs.fa.mainTabs="designer"
-      fa_checkfactory(player.fa.pos)
     }
   },
   
@@ -127,6 +154,7 @@ addLayer("fa_designer",{
       return {}
     },
     getStyle(_,id){
+      let machine=getGridData("fa",player.fa.pos).factory.getmachine(id)
       let col
       let x=((id%100-1)/11+(player.fa.pos%100))/5
       let y=(Math.floor(id/100-1)/11+Math.floor(player.fa.pos/100))/5
@@ -143,7 +171,6 @@ addLayer("fa_designer",{
         "border":"0px",
         "background-color":col,
       }
-      let machine=fa_getmachine(id)
       style["background-image"]=`url("${machine.sprite}")`
       style["background-size"]="auto 100%"
       return style  
@@ -174,37 +201,33 @@ addLayer("fa_designer",{
         "></div>`
 
       }else{
-        let machine=fa_getmachine(id)
+        let machine=getGridData("fa",player.fa.pos).factory.getmachine(id)
         return machine.symbol
       }
     },
     onClick(_,id){
-      fa_checkfactory(player.fa.pos)
       let prevpos=player.fa.pos
       if (id%100== 1 && player.fa.pos%100> 1)player.fa.pos-=1
       if (id%100==13 && player.fa.pos%100<20)player.fa.pos+=1
       if (Math.floor(id/100)== 1 && Math.floor(player.fa.pos/100)> 1)player.fa.pos-=100
       if (Math.floor(id/100)==13 && Math.floor(player.fa.pos/100)<20)player.fa.pos+=100
       if (prevpos==player.fa.pos){
-        player.fa.factories[player.fa.pos][id]=new fa_pipe(player.fa.pos,id)
+        getGridData("fa",player.fa.pos).factory.create(id,"pipe")
       }
 
-      fa_checkfactory(player.fa.pos)
       refreshgrid("fa_designer")
       refreshtile("fa_designer",id)
     },
     onRClick(_,id){
-      fa_checkfactory(player.fa.pos)
       let prevpos=player.fa.pos
       if (id%100== 1 && player.fa.pos%100> 1)player.fa.pos-=1
       if (id%100==13 && player.fa.pos%100<20)player.fa.pos+=1
       if (Math.floor(id/100)== 1 && Math.floor(player.fa.pos/100)> 1)player.fa.pos-=100
       if (Math.floor(id/100)==13 && Math.floor(player.fa.pos/100)<20)player.fa.pos+=100
       if (prevpos==player.fa.pos){
-        player.fa.factories[player.fa.pos][id]=""
+        getGridData("fa",player.fa.pos).factory.create(id,"empty")
       }
 
-      fa_checkfactory(player.fa.pos)
       refreshgrid("fa_designer")
       refreshtile("fa_designer",id)
     },

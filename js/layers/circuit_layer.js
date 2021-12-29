@@ -580,7 +580,7 @@ ma_puzzledata={
     },
     {
       title: "sub",
-      desc: "subtract I1 from I0, send to O0",
+      desc: "subtract I1 from I0, send to O0\n(subtraction is done with the logic slate)",
       inputs: [
         [12, 0, -50],
         [ 4, 4,-150]
@@ -592,7 +592,7 @@ ma_puzzledata={
         return {i:[[a],[b]],o:[[a-b]]}
       },
       rtests_required: 47
-    },
+    }
   ],
   200: [
     {
