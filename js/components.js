@@ -609,6 +609,18 @@ function loadVue() {
     }
 	})
 
+  Vue.component('bad-drop-down', {
+		props: ['layer', 'data'],
+		template: `
+			<select :id="'input-'+layer+'-'+data[0]" @change="onchange">
+				<option v-for="item in data[1]" v-bind:value="item">{{item}}</option>
+			</select>
+		`,
+    methods: {
+      onchange(){eval(`${this.data[0]} = "${document.getElementById('input-' + this.layer + '-' + this.data[0]).value}"`)}
+    }
+	})
+
 	// Updates the value in player[layer][data][0]
 	Vue.component('slider', {
 		props: ['layer', 'data'],

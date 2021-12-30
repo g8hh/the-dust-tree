@@ -1048,6 +1048,7 @@ addLayer("ma", {
   update: function(diff){
     player.ma.ticklength=1
     player.ma.ticklength*=layers.ma.fastfwd?.01:1
+    diff=Math.min(diff,1)
     if(!player.ma.paused)player.ma.simtime+=diff
     for (;player.ma.simtime>player.ma.ticklength;player.ma.simtime-=player.ma.ticklength){
       if (player.subtabs.ma.mainTabs==="simulator"){

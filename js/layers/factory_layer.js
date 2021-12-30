@@ -68,7 +68,8 @@ class FA_pipe extends FA_machine{
   }
   config(){
     return [
-      {v:"symbol",t:"text"}
+      //{v:"symbol",t:"text"},
+      {v:"sprite",t:"drop-down",o:["./pipe_E.png","./pipe_base.png"]}
     ]
   }
 }
@@ -181,6 +182,10 @@ addLayer("fa",{
               break
             case "text":
               configlayout.push(["bad-text-input","player.fa.selectedmachine."+setting.v])
+              break
+            case "drop-down":
+              configlayout.push(["bad-drop-down",["player.fa.selectedmachine."+setting.v,setting.o]])
+                
           }
         }
       }
