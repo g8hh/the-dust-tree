@@ -970,7 +970,7 @@ function ma_setcomponent(x,y,type){
             }
             ma_fixcomponents()
             ma_refresh_data()
-            blueprint_name=blueprint_val
+            player.ma.blueprint_name=blueprint_val
           }
         }
       }

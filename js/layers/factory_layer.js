@@ -1,13 +1,13 @@
 class FA_factory {
   constructor(){
-    this.tiles=[]
+    this.tiles={}
   }
   create(id,type){
-    console.log(`creating ${type} at ${id}`)
+    //console.log(`creating ${type} at ${id}`)
     this.tiles[id]=fa_createmachine(type)
   }
   getmachine(id){
-    if(!this.tiles[id]){this.create(id,"empty");console.log("created!",id)}
+    if(!this.tiles[id])this.create(id,"empty")//;console.log("created!",id)
     return this.tiles[id]
   }
   update_io(){
@@ -36,7 +36,8 @@ class FA_empty extends FA_machine{
   constructor(){
     super()
     this.name="empty"
-    this.sprite="./empty.png",
+    this.sprite="./empty.png"
+    this.spritepos=0
     this.symbol=""
   }
 }
@@ -45,7 +46,16 @@ class FA_crafter extends FA_machine{
     super()
     this.name="crafter"
     this.sprite="./crafter_E.png"
+    this.spritepos=15
     this.symbol="C"
+  }
+  config(){
+    return [
+      {v:"text",t:"label"},
+      {v:"symbol",t:"text"},
+      {v:"sprite",t:"label"},
+      {v:"spritepos",t:"slider",l:0,u:15}
+    ]
   }
 }
 class FA_pipe extends FA_machine{
@@ -53,7 +63,13 @@ class FA_pipe extends FA_machine{
     super()
     this.name="pipe"
     this.sprite="./pipe_E.png"
+    this.spritepos=0
     this.symbol="P"+Math.floor(Math.random()*10)
+  }
+  config(){
+    return [
+      {v:"symbol",t:"text"}
+    ]
   }
 }
 
@@ -66,11 +82,13 @@ function fa_fixfactories(){
         newfactory[key]=value
       }
       for (const [pos,machine] of Object.entries(newfactory.tiles)){
-        console.log(`fixxed ${pos}`,machine)
-        if(machine){
-          newfactory.tiles[pos]=fa_createmachine(machine.name)
-          for (const [key,value] of Object.entries(machine)){
-            newfactory.tiles[pos][key]=value
+        if (pos%100<=12){
+          //console.log(`fixxed ${pos}`,machine)
+          if(machine){
+            newfactory.tiles[pos]=fa_createmachine(machine.name)
+            for (const [key,value] of Object.entries(machine)){
+              newfactory.tiles[pos][key]=value
+            }
           }
         }
       }
@@ -99,7 +117,10 @@ addLayer("fa",{
       points:new Decimal(0),
       pos:101,
       t:0,
-      worldseed:fa_worldseed //determines tile layout
+      worldseed:fa_worldseed, //determines tile layout
+
+      toolmode:"destroy",
+      selectedmachine:null,
     }
   },
   update(diff){
@@ -144,16 +165,52 @@ addLayer("fa",{
       content: [
         ["display-text",function(){return player.fa.worldseed}],
         "grid"
-      ]
+      ],
     },
-    designer: {
-      content: [
-        ["display-text",function(){return player.fa.pos}],
+    designer() {
+      let configlayout=[]
+      if (player.fa.selectedmachine && player.fa.selectedmachine.config){
+        let data=player.fa.selectedmachine.config()
+        for (const [l,setting] of Object.entries(data)){
+          switch(setting.t){
+            case "label":
+              configlayout.push(["display-text",setting.v])
+              break
+            case "slider":
+              configlayout.push(["bad-slider",["player.fa.selectedmachine."+setting.v,setting.l,setting.u]])
+              break
+            case "text":
+              configlayout.push(["bad-text-input","player.fa.selectedmachine."+setting.v])
+          }
+        }
+      }
+      return {
+        content: [
+        ["display-text",player.fa.pos],
         ["layer-proxy",["fa_designer",[
-          "grid"
-        ]]]
+          ["row",[
+            "grid",
+            ["column",
+              configlayout,
+              {
+                "background-color": "#222222",
+                "width":"200px",
+                "height":"400px",
+              }
+            ],
+          ]],
+          "clickables",
+          [
+            "column",
+            [
+              ["display-text", "hi"]
+            ],
+            "background-color: white; color: green"
+          ],
+        ]]],
       ]
-    }
+      }
+    },
   },
   layerShown(){return player.re.upgrades.includes(31)||"ghost"},
   tooltip(){return "expand the factory"}
@@ -170,11 +227,27 @@ addLayer("fa_designer",{
       points:new Decimal(0),
     }
   },
+  clickables:{
+    11: {
+      canClick: true,
+      onClick(){player.fa.toolmode=player.fa.toolmode=="config"?"destroy":"config"},
+      style(){
+        return {
+          "width":"70px",
+          "height":"70px",
+          "min-height":"0px",
+          "background-image":'url("./tools_E.png")',
+          "background-size":"auto 100%",
+          "background-position":player.fa.toolmode=="destroy"?"100% 0%":"0% 0%"
+        }
+      }
+    }
+  },
   grid:{
     rows:13,
     cols:13,
     getStartData(){
-      return {}
+      return 0
     },
     getStyle(_,id){
       let machine=getGridData("fa",player.fa.pos).factory.getmachine(id)
@@ -196,6 +269,7 @@ addLayer("fa_designer",{
       }
       style["background-image"]=`url("${machine.sprite}")`
       style["background-size"]="auto 100%"
+      style["background-position"]=`${-machine.spritepos*100}% 0%`
       return style  
     },
     getTitle(_,id){
@@ -235,7 +309,9 @@ addLayer("fa_designer",{
       if (Math.floor(id/100)== 1 && Math.floor(player.fa.pos/100)> 1)player.fa.pos-=100
       if (Math.floor(id/100)==13 && Math.floor(player.fa.pos/100)<20)player.fa.pos+=100
       if (prevpos==player.fa.pos){
-        getGridData("fa",player.fa.pos).factory.create(id,"pipe")
+        if(getGridData("fa",player.fa.pos).factory.getmachine(id).name==="empty"){
+          getGridData("fa",player.fa.pos).factory.create(id,"crafter")
+        }
       }
 
       refreshgrid("fa_designer")
@@ -248,7 +324,14 @@ addLayer("fa_designer",{
       if (Math.floor(id/100)== 1 && Math.floor(player.fa.pos/100)> 1)player.fa.pos-=100
       if (Math.floor(id/100)==13 && Math.floor(player.fa.pos/100)<20)player.fa.pos+=100
       if (prevpos==player.fa.pos){
-        getGridData("fa",player.fa.pos).factory.create(id,"empty")
+        switch(player.fa.toolmode){
+          case "config":
+            player.fa.selectedmachine=getGridData("fa",player.fa.pos).factory.getmachine(id)
+            break
+          case "destroy":
+            getGridData("fa",player.fa.pos).factory.create(id,"empty")
+            break
+        }
       }
 
       refreshgrid("fa_designer")
@@ -257,3 +340,12 @@ addLayer("fa_designer",{
     onHold(data,id){this.onClick(data,id)}
   },
 })
+
+a={
+  b: {
+    c: "hi, the code works!",
+    number1: 1,
+    number2: 2,
+    number3: 3
+  }
+}

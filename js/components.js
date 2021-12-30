@@ -582,6 +582,33 @@ function loadVue() {
     `
   })
 
+  Vue.component('bad-text-input', {
+		props: ['layer', 'data'],
+		template: `
+    <input class="instant" :id="'input-' + layer + '-' + data" :value="eval(data)" v-on:focus="focused(true)" v-on:blur="focused(false)"
+    v-on:change="onchange">
+		`,
+    methods: {
+      onchange(){
+        let evalstring=`${this.data} = "${(document.getElementById('input-' + this.layer + '-' + this.data).value).toString().replaceAll("\\","\\\\").replaceAll("\"","\\\"")}"`
+        eval(evalstring)
+      }
+    }
+	})
+
+  Vue.component('bad-slider', {
+		props: ['layer', 'data'],
+		template: `
+			<div class="tooltipBox">
+			<tooltip :text="'val:'+eval(data[0])"></tooltip><input type="range" :id="'input-'+layer+'-'+data" @input="onchange" :value="eval(data[0])" :min="data[1]" :max="data[2]"></div>`,
+    methods: {
+      onchange(){
+        let evalstring=`${this.data[0]} = ${document.getElementById('input-' + this.layer + '-' + this.data).value}`
+        eval(evalstring)
+      }
+    }
+	})
+
 	// Updates the value in player[layer][data][0]
 	Vue.component('slider', {
 		props: ['layer', 'data'],
