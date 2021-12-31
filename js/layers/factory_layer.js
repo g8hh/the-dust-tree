@@ -4,7 +4,7 @@ class FA_factory {
   }
   create(id,type){
     //console.log(`creating ${type} at ${id}`)
-    this.tiles[id]=fa_createmachine(type)
+    this.tiles[id]=fa_createmachine(type,id)
   }
   getmachine(id){
     if(!this.tiles[id])this.create(id,"empty")//;console.log("created!",id)
@@ -21,20 +21,20 @@ class FA_factory {
   }
 }
 
-function fa_createmachine(type){
+function fa_createmachine(type,pos){
   if (fa_machinenames[type]){
-    return new fa_machinenames[type]()
+    return new fa_machinenames[type](pos)
   }
 }
 
 class FA_machine {
-  constructor(){
-
+  constructor(pos){
+    this.pos=pos
   }
 }
 class FA_empty extends FA_machine{
-  constructor(){
-    super()
+  constructor(pos){
+    super(pos)
     this.name="empty"
     this.sprite="./empty.png"
     this.spritepos=0
@@ -42,25 +42,37 @@ class FA_empty extends FA_machine{
   }
 }
 class FA_crafter extends FA_machine{
-  constructor(){
-    super()
+  constructor(pos){
+    super(pos)
     this.name="crafter"
     this.sprite="./crafter_E.png"
     this.spritepos=15
     this.symbol="C"
+    this.IO=["none","none","none","none"]
+  }
+  modify_style(style){
+    let spritepos=0
+    for(let l=0;l<=3;l++){
+      console.log(l)
+      if (this.IO[l]!=="none"){
+        spritepos+=2**l
+      }
+    }
+    style["background-position"]=`${-spritepos*100}% 0%`
   }
   config(){
     return [
       {v:"text",t:"label"},
-      {v:"symbol",t:"text"},
+      {v:"symbol",t:"toggle",o:["C","cr","cra","craf","craft"],c:["#ffffff","#ffaaff","#ff77ff","#ff33ff","#ff00ff"]},
       {v:"sprite",t:"label"},
-      {v:"spritepos",t:"slider",l:0,u:15}
+      {v:"spritepos",t:"slider",l:0,u:15},
+      {v:"IO",t:"io"},
     ]
   }
 }
 class FA_pipe extends FA_machine{
-  constructor(){
-    super()
+  constructor(pos){
+    super(pos)
     this.name="pipe"
     this.sprite="./pipe_E.png"
     this.spritepos=0
@@ -184,11 +196,22 @@ addLayer("fa",{
               configlayout.push(["bad-text-input","player.fa.selectedmachine."+setting.v])
               break
             case "drop-down":
-              configlayout.push(["bad-drop-down",["player.fa.selectedmachine."+setting.v,setting.o]])
-                
+              configlayout.push(["bad-drop-down",["player.fa.selectedmachine."+setting.v,setting.o],
+              {
+                "background-color":"black"
+              }])
+              break
+            case "toggle":
+              configlayout.push(["bad-toggle",["player.fa.selectedmachine."+setting.v,setting.o,setting.c]])
+              break
+            case "io":
+              let v="player.fa.selectedmachine."+setting.v
+              configlayout.push(["4way-bad-toggle",[[v+"[0]",v+"[1]",v+"[2]",v+"[3]"],["none","pull","push"],["gray","blue","orange"]]])
+              
           }
         }
       }
+      if (configlayout.length>0){configlayout.unshift(["clickable","destroy_selected"])}
       return {
         content: [
         ["display-text",player.fa.pos],
@@ -199,8 +222,9 @@ addLayer("fa",{
               configlayout,
               {
                 "background-color": "#222222",
-                "width":"200px",
+                "width":configlayout.length>0?"200px":"20px",
                 "height":"400px",
+                "border-radius":"0px 10px 10px 0px"
               }
             ],
           ]],
@@ -246,6 +270,31 @@ addLayer("fa_designer",{
           "background-position":player.fa.toolmode=="destroy"?"100% 0%":"0% 0%"
         }
       }
+    },
+    "destroy_selected":{
+      canClick(){
+        if (player.fa.selectedmachine){
+          return player.fa.selectedmachine.name!=="empty"
+        }
+        return false
+      },
+      onClick(){
+        if (player.fa.selectedmachine){
+          getGridData("fa",player.fa.pos).factory.create(player.fa.selectedmachine.pos,"empty")
+          player.fa.selectedmachine=getGridData("fa",player.fa.pos).factory.getmachine(player.fa.selectedmachine.pos)
+        }
+      },
+      
+      style(){
+        return {
+          "width":"70px",
+          "height":"70px",
+          "min-height":"0px",
+          "background-image":'url("./tools_E.png")',
+          "background-size":"auto 100%",
+          "background-position":"100% 0%",
+        }
+      }
     }
   },
   grid:{
@@ -275,6 +324,7 @@ addLayer("fa_designer",{
       style["background-image"]=`url("${machine.sprite}")`
       style["background-size"]="auto 100%"
       style["background-position"]=`${-machine.spritepos*100}% 0%`
+      if (machine.modify_style) {machine.modify_style(style)}
       return style  
     },
     getTitle(_,id){
@@ -345,12 +395,3 @@ addLayer("fa_designer",{
     onHold(data,id){this.onClick(data,id)}
   },
 })
-
-a={
-  b: {
-    c: "hi, the code works!",
-    number1: 1,
-    number2: 2,
-    number3: 3
-  }
-}

@@ -585,7 +585,7 @@ function loadVue() {
   Vue.component('bad-text-input', {
 		props: ['layer', 'data'],
 		template: `
-    <input class="instant" :id="'input-' + layer + '-' + data" :value="eval(data)" v-on:focus="focused(true)" v-on:blur="focused(false)"
+    <input class="instant" :id="'input-' + layer + '-' + data" :value="accessvar(data)" v-on:focus="focused(true)" v-on:blur="focused(false)"
     v-on:change="onchange">
 		`,
     methods: {
@@ -600,10 +600,10 @@ function loadVue() {
 		props: ['layer', 'data'],
 		template: `
 			<div class="tooltipBox">
-			<tooltip :text="'val:'+eval(data[0])"></tooltip><input type="range" :id="'input-'+layer+'-'+data" @input="onchange" :value="eval(data[0])" :min="data[1]" :max="data[2]"></div>`,
+			<tooltip :text="'val:'+accessvar(data[0])"></tooltip><input type="range" :id="'slider-'+layer+'-'+data" @input="onchange" :value="accessvar(data[0])" :min="data[1]" :max="data[2]"></div>`,
     methods: {
       onchange(){
-        let evalstring=`${this.data[0]} = ${document.getElementById('input-' + this.layer + '-' + this.data).value}`
+        let evalstring=`${this.data[0]} = ${document.getElementById('slider-' + this.layer + '-' + this.data).value}`
         eval(evalstring)
       }
     }
@@ -612,14 +612,53 @@ function loadVue() {
   Vue.component('bad-drop-down', {
 		props: ['layer', 'data'],
 		template: `
-			<select :id="'input-'+layer+'-'+data[0]" @change="onchange">
+			<select :id="'drop-down-'+layer+'-'+data[0]" @change="onchange">
 				<option v-for="item in data[1]" v-bind:value="item">{{item}}</option>
 			</select>
 		`,
     methods: {
-      onchange(){eval(`${this.data[0]} = "${document.getElementById('input-' + this.layer + '-' + this.data[0]).value}"`)}
+      onchange(){eval(`${this.data[0]} = "${document.getElementById('drop-down-' + this.layer + '-' + this.data[0]).value}"`)}
     }
 	})
+  
+  Vue.component('bad-toggle', {
+		props: ['layer', 'data'],
+		template: `
+		<button class="smallUpg can" :id="'toggle-'+layer+'-'+data[0]" v-bind:style="{'background-color':(this.data[2]||[])[this.data[1].indexOf(accessvar(data[0]))]||'white','margin':'3px'}" 
+    v-on:click="onclick()"><div style="transform:rotate(-45deg)">{{accessvar(data[0])}}</div></button>
+		`,
+    methods:{
+      onclick(){
+        eval(
+          `${this.data[0]}=this.data[1][(this.data[1].indexOf(${this.data[0]})+1)%this.data[1].length]`
+        )
+
+      }
+    }
+	})
+
+  Vue.component('4way-bad-toggle',{
+    
+		props: ['layer', 'data'],
+		template: `
+    <div style="font-size:0px;transform:rotate(45deg)">
+		<bad-toggle :layer="layer" :data="[data[0][0],data[1],data[2]]"></bad-toggle>
+		<bad-toggle :layer="layer" :data="[data[0][1],data[1],data[2]]"></bad-toggle><br>
+		<bad-toggle :layer="layer" :data="[data[0][2],data[1],data[2]]"></bad-toggle>
+		<bad-toggle :layer="layer" :data="[data[0][3],data[1],data[2]]"></bad-toggle>
+    </div>
+		`,
+  })
+
+  
+	Vue.component('custom-clickable', {
+    props: ['layer','data'],
+    template: `
+    
+    `
+  })
+
+
 
 	// Updates the value in player[layer][data][0]
 	Vue.component('slider', {

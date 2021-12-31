@@ -30,6 +30,10 @@ cr_data={
       {name:"recipe chip",c:"#f5a097"},
       {name:"blueprint chip",c:"#b9bffb"},
       {name:"divisive chip",c:"#ffd541"},
+    ],
+    500:[//factory parts (1)
+      {name:"pipe",c:"#b9bffb"},
+      {name:"crafter",c:"#b9bffb"}
     ]
   },
   craft_data:{
@@ -424,6 +428,14 @@ let data={
           ">${cr_getitem(id)}</div>`
           return title
       },
+      getTooltip(data,id){
+        if (cr_data.resources[id]){
+          if (cr_getobj(id).haveseen){
+            return cr_data.resources[id].name
+          }
+        }
+        return "none"
+      }
     },
     layerShown(){return player.re.upgrades.includes(11)},
     tooltip(){return "manual crafting"}

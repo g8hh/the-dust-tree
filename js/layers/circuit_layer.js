@@ -161,9 +161,10 @@ class MA_port extends MA_component {
     if(!port){return}
 
 
-    if (port.index>=port.data.length){ma_cooldown=ma_maxcooldown}
     this.outbox=[]
-    this.outbox[this.targport]=new Fraction(port.data[port.index])
+    if (port.index<port.data.length){
+      this.outbox[this.targport]=new Fraction(port.data[port.index])
+    }
   }
   on_pull() {
     if (this.mode=="I"){

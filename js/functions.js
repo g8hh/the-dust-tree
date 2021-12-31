@@ -46,3 +46,11 @@ function rgbToHex(r,g,b) {
 function snap(v,s){
   return Math.floor(v/s)*s
 }
+
+function accessvar(address,fallback){
+  try{
+    return eval(address)
+  }catch{
+    return fallback
+  }
+}
