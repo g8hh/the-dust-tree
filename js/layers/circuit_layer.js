@@ -1129,6 +1129,7 @@ addLayer("ma", {
             if (id%100==1||id%100==9||id<200||id>=900){
               obj = new MA_port(id)
             }else{
+              cr_additem(getGridData("ma",id).component_type,1)
               obj = new MA_null(id)
             }
             setGridData("ma",id,obj)
@@ -1483,7 +1484,7 @@ addLayer("ma", {
         the togglable slate, contrary to popular belief, does not toggle, because i'm bad
         at naming things. it does however, allow you to conditionally send signals. if two signals
         meet perpendicularly, then each signal will only be sent through if the perpendicular value
-        is >=1.
+        is greater than zero.
         `],
         ["row",[
           ["display-image",["./guide/guide_3_1_E.png"]],
