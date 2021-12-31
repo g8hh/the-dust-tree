@@ -965,12 +965,22 @@ function ma_setcomponent(x,y,type){
           let blueprint_val=player.blueprints.bporder[player.blueprints.selected]
           if (blueprint_val){
             let data=player.blueprints.bpdata[blueprint_val]
-            for (const [pos,component] of Object.entries(data.tiles)){
-              setGridData("ma",pos,component)
+            let hasitems=true
+            for (const [item,amount] of Object.entries(data.costs)){
+              if(!cr_hasitem(item,amount))hasitems=false
             }
-            ma_fixcomponents()
-            ma_refresh_data()
-            player.ma.blueprint_name=blueprint_val
+            if (hasitems){
+              for (const [item,amount] of Object.entries(data.costs)){
+                cr_subitem(item,amount)
+              }
+              for (const [pos,component] of Object.entries(data.tiles)){
+                cr_additem(getGridData("ma",pos).component_type,1)
+                setGridData("ma",pos,component)
+              }
+              ma_fixcomponents()
+              ma_refresh_data()
+              player.ma.blueprint_name=blueprint_val
+            }
           }
         }
       }
@@ -1142,11 +1152,16 @@ addLayer("ma", {
       onClick(){
         
         ma_refresh_data()
-        let newdata={tiles:{}}
+        let newdata={tiles:{},costs:{}}
         for(ly=100;ly<=900;ly+=100){
           for(lx=1;lx<=9;lx++){
             let obj
             let id=lx+ly
+            let component_type=getGridData("ma",id).component_type
+            if (component_type!==""&&component_type!=="port"){
+              if(!newdata.costs[component_type])newdata.costs[component_type]=0
+              newdata.costs[component_type]+=1
+            }
             newdata.tiles[id]=getGridData("ma",id)
           }
         }
@@ -1221,11 +1236,64 @@ addLayer("ma", {
         }else{
           if (player.cr.selected){
             if(cr_getitem(player.cr.selected).gt(0)){
+              cr_subitem(player.cr.selected,1)
+              cr_additem(getGridData("ma",id).component_type,1)
               setGridData("ma",id,ma_component_make(player.cr.selected,id))
             }
-          }else{
-            setGridData("ma",id,ma_component_make("",id))
           }
+        }
+      }else{
+        if (data.held_signal===null){
+          for (l=0;l<=3;l++){
+            data.outbox=[sigamount,sigamount,sigamount,sigamount]
+            data.heldvalue=sigamount
+            data.pulleddirs={}
+          }
+        }else{
+          data.outbox=[]
+          data.pulleddirs={}
+        }
+      }
+      ma_updatesprite(id)
+      for (let l=0;l<=3;l++){
+        let o=cr_orderofchecks[l]
+        //console.log(l,o.x,o.y,id+o.x+o.y*100)
+        ma_updatesprite(id+o.x+o.y*100)
+      }
+    },
+    onRClick(data,id){
+      if (player.subtabs.ma.mainTabs=="designer"){
+        
+        if ((id%100==1||id%100==9||id<200||id>900)){
+          switch (data.mode){
+            case "":
+              data.mode="O"
+              data.port=player.ma.outputports.length-1
+              break
+            case "I":
+              data.port-=1
+              if(data.port<0){
+                data.port=0
+                data.mode=""
+              }
+              break
+            case "O":
+              data.port-=1
+              if(data.port<0){
+                data.port=player.ma.inputports.length-1
+                data.mode="I"
+              }
+              break
+
+          }
+          for(lx=2;lx<=8;lx++){
+            for(ly=200;ly<=800;ly+=100){
+              ma_updatesprite(lx+ly)
+            }
+          }
+        }else{
+          cr_additem(getGridData("ma",id).component_type,1)
+          setGridData("ma",id,ma_component_make("",id))
         }
       }else{
         if (data.held_signal===null){
