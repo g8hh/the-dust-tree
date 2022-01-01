@@ -54,7 +54,7 @@ cr_data={
     "engraved bricksCdust shard":[{a:1,r:"memory chip"}],
     "memory chipClively dust":[{a:1,r:"recipe chip"}],
     "memory chipCdust":[{a:1,r:"blueprint chip"}],
-    "memory chipCresponsive dust":[{a:1,r:"buffer chip"}],
+    "memory chipCresponsive dust":[{a:1,r:"divisive chip"}],
   },
   nameid:{},
 }
