@@ -600,11 +600,49 @@ function loadVue() {
 		props: ['layer', 'data'],
 		template: `
 			<div class="tooltipBox">
-			<tooltip :text="'val:'+accessvar(data[0])"></tooltip><input type="range" :id="'slider-'+layer+'-'+data" @input="onchange" :value="accessvar(data[0])" :min="data[1]" :max="data[2]"></div>`,
+			<tooltip
+      :text="accessvar(data[0])"
+      ></tooltip>
+      <div style="
+      background-color:black;
+      width:100%;
+      height:20px;
+      margin-top:10px;
+      margin-bottom:10px;
+      position:relative;
+      border-radius:5px;
+      ">
+      <div :style="
+      this.fetch_style()
+      "></div>
+      <input type="range" 
+      style="
+      -webkit-appearance: none;
+      opacity:0;
+      width:100%;
+      height:100%;
+      "
+      :id="'slider-'+layer+'-'+data" @input="onchange" :value="accessvar(data[0])" :min="data[1]" :max="data[2]">
+      </div>
+      </div>`
+      ,
+      
     methods: {
+      fetch_style(){
+        return `
+          border-radius:5px;
+          position:absolute;
+          left:0%;
+          right:${100-(accessvar(this.data[0])-this.data[1])/(this.data[2]-this.data[1])*100}%;
+          bottom:0%;
+          top:0%;
+          background-color:red
+        `
+      },
       onchange(){
-        let evalstring=`${this.data[0]} = ${document.getElementById('slider-' + this.layer + '-' + this.data).value}`
+        let evalstring=`writevar(this.data[0],${document.getElementById('slider-' + this.layer + '-' + this.data).value})`
         eval(evalstring)
+        if (typeof this.data[3] === "function"){this.data[3]()}
       }
     }
 	})
@@ -625,14 +663,47 @@ function loadVue() {
 		props: ['layer', 'data'],
 		template: `
 		<button class="smallUpg can" :id="'toggle-'+layer+'-'+data[0]" v-bind:style="{'background-color':(this.data[2]||[])[this.data[1].indexOf(accessvar(data[0]))]||'white','margin':'3px'}" 
-    v-on:click="onclick()"><div style="transform:rotate(-45deg)">{{accessvar(data[0])}}</div></button>
+    v-on:click="onclick()"
+    @contextmenu.prevent="onrclick"
+    ><div style="transform:rotate(-45deg)">{{accessvar(data[0])}}</div></button>
 		`,
     methods:{
       onclick(){
+        let outervar//the base accessed variable
+        let search=this.data[0].search(".")
+        if(search>0){
+          outervar=this.data[0].substring(0,search-1)
+        }else{
+          outervar=this.data[0]
+        }
         eval(
-          `${this.data[0]}=this.data[1][(this.data[1].indexOf(${this.data[0]})+1)%this.data[1].length]`
+          `
+          writevar(this.data[0],this.data[1][
+            (this.data[1].indexOf(accessvar(this.data[0]))+1)%this.data[1].length
+          ])
+          `
         )
-
+        if (typeof this.data[3] === "function"){this.data[3]()}
+      },
+      onrclick(){
+        let outervar//the base accessed variable
+        let search=this.data[0].search(".")
+        if(search>0){
+          outervar=this.data[0].substring(0,search-1)
+        }else{
+          outervar=this.data[0]
+        }
+        let i=this.data[1].indexOf(accessvar(this.data[0]))
+        i--
+        if(i<0)i=this.data[1].length-1
+        eval(
+          `
+          writevar(this.data[0],this.data[1][
+            i
+          ])
+          `
+        )
+        if (typeof this.data[3] === "function"){this.data[3]()}
       }
     }
 	})
@@ -642,10 +713,10 @@ function loadVue() {
 		props: ['layer', 'data'],
 		template: `
     <div style="font-size:0px;transform:rotate(45deg)">
-		<bad-toggle :layer="layer" :data="[data[0][0],data[1],data[2]]"></bad-toggle>
-		<bad-toggle :layer="layer" :data="[data[0][1],data[1],data[2]]"></bad-toggle><br>
-		<bad-toggle :layer="layer" :data="[data[0][2],data[1],data[2]]"></bad-toggle>
-		<bad-toggle :layer="layer" :data="[data[0][3],data[1],data[2]]"></bad-toggle>
+		<bad-toggle :layer="layer" :data="[data[0][0],data[1],data[2],data[3]]"></bad-toggle>
+		<bad-toggle :layer="layer" :data="[data[0][1],data[1],data[2],data[3]]"></bad-toggle><br>
+		<bad-toggle :layer="layer" :data="[data[0][2],data[1],data[2],data[3]]"></bad-toggle>
+		<bad-toggle :layer="layer" :data="[data[0][3],data[1],data[2],data[3]]"></bad-toggle>
     </div>
 		`,
   })

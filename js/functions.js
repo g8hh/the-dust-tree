@@ -54,3 +54,12 @@ function accessvar(address,fallback){
     return fallback
   }
 }
+
+vartowrite=0
+function writevar(address,value){
+  vartowrite=value
+  try{
+    eval(address+'=vartowrite')
+  }catch{
+  }
+}

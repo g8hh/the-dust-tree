@@ -53,7 +53,6 @@ class FA_crafter extends FA_machine{
   modify_style(style){
     let spritepos=0
     for(let l=0;l<=3;l++){
-      console.log(l)
       if (this.IO[l]!=="none"){
         spritepos+=2**l
       }
@@ -77,11 +76,22 @@ class FA_pipe extends FA_machine{
     this.sprite="./pipe_E.png"
     this.spritepos=0
     this.symbol="P"+Math.floor(Math.random()*10)
+    this.IO=["none","none","none","none"]
+  }
+  modify_style(style){
+    let spritepos=0
+    for(let l=0;l<=3;l++){
+      if (this.IO[l]!=="none"){
+        spritepos+=2**l
+      }
+    }
+    style["background-position"]=`${-spritepos*100}% 0%`
   }
   config(){
     return [
       //{v:"symbol",t:"text"},
-      {v:"sprite",t:"drop-down",o:["./pipe_E.png","./pipe_base.png"]}
+      {v:"sprite",t:"drop-down",o:["./pipe_E.png","./pipe_base.png"]},
+      {v:"IO",t:"io"},
     ]
   }
 }
@@ -190,7 +200,7 @@ addLayer("fa",{
               configlayout.push(["display-text",setting.v])
               break
             case "slider":
-              configlayout.push(["bad-slider",["player.fa.selectedmachine."+setting.v,setting.l,setting.u]])
+              configlayout.push(["bad-slider",["player.fa.selectedmachine."+setting.v,setting.l,setting.u,setting.cb]])
               break
             case "text":
               configlayout.push(["bad-text-input","player.fa.selectedmachine."+setting.v])
@@ -202,11 +212,11 @@ addLayer("fa",{
               }])
               break
             case "toggle":
-              configlayout.push(["bad-toggle",["player.fa.selectedmachine."+setting.v,setting.o,setting.c]])
+              configlayout.push(["bad-toggle",["player.fa.selectedmachine."+setting.v,setting.o,setting.c,setting.cb]])
               break
             case "io":
               let v="player.fa.selectedmachine."+setting.v
-              configlayout.push(["4way-bad-toggle",[[v+"[0]",v+"[1]",v+"[2]",v+"[3]"],["none","pull","push"],["gray","blue","orange"]]])
+              configlayout.push(["4way-bad-toggle",[[v+"[3]",v+"[0]",v+"[2]",v+"[1]"],["none","pull","push"],["gray","blue","orange"],function(){refreshtile("fa_designer",player.fa.selectedmachine.pos)}]])
               
           }
         }
@@ -365,7 +375,7 @@ addLayer("fa_designer",{
       if (Math.floor(id/100)==13 && Math.floor(player.fa.pos/100)<20)player.fa.pos+=100
       if (prevpos==player.fa.pos){
         if(getGridData("fa",player.fa.pos).factory.getmachine(id).name==="empty"){
-          getGridData("fa",player.fa.pos).factory.create(id,"crafter")
+          getGridData("fa",player.fa.pos).factory.create(id,"pipe")
         }
       }
 
