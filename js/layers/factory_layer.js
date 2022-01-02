@@ -250,6 +250,7 @@ addLayer("fa",{
                   "padding-bottom":"20px",
                   "width":"auto",
                   "overflow":"hidden",
+                  "transition":"width 1s, height 1s",
                 }
               ]
             ],
@@ -420,4 +421,10 @@ addLayer("fa_designer",{
     },
     onHold(data,id){this.onClick(data,id)}
   },
+})
+
+//machine storage & crafting
+addLayer("fa_machines",{
+  startData(){return{points:new Decimal(0)}},
+
 })
