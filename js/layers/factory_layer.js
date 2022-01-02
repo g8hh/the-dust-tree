@@ -89,8 +89,6 @@ class FA_pipe extends FA_machine{
   }
   config(){
     return [
-      //{v:"symbol",t:"text"},
-      {v:"sprite",t:"drop-down",o:["./pipe_E.png","./pipe_base.png"]},
       {v:"IO",t:"io"},
     ]
   }
@@ -125,6 +123,40 @@ for (const [_,machine] of Object.entries([FA_pipe,FA_crafter,FA_empty])){
   fa_machinenames[new machine().name]=machine
 }
 
+function machineconfiglayout(){  
+  let configlayout=[]
+  if (player.fa.selectedmachine && player.fa.selectedmachine.config){
+    let data=player.fa.selectedmachine.config()
+    for (const [l,setting] of Object.entries(data)){
+      switch(setting.t){
+        case "label":
+          configlayout.push(["display-text",setting.v])
+          break
+        case "slider":
+          configlayout.push(["bad-slider",["player.fa.selectedmachine."+setting.v,setting.l,setting.u,setting.cb]])
+          break
+        case "text":
+          configlayout.push(["bad-text-input","player.fa.selectedmachine."+setting.v])
+          break
+        case "drop-down":
+          configlayout.push(["bad-drop-down",["player.fa.selectedmachine."+setting.v,setting.o],
+          {
+            "background-color":"black"
+          }])
+          break
+        case "toggle":
+          configlayout.push(["bad-toggle",["player.fa.selectedmachine."+setting.v,setting.o,setting.c,setting.cb]])
+          break
+        case "io":
+          let v="player.fa.selectedmachine."+setting.v
+          configlayout.push(["4way-bad-toggle",[[v+"[3]",v+"[0]",v+"[2]",v+"[1]"],["none","pull","push"],["gray","blue","orange"],function(){refreshtile("fa_designer",player.fa.selectedmachine.pos)}]])
+          break
+      }
+    }
+  }
+  if (configlayout.length>0){configlayout.unshift(["clickable","destroy_selected"])}
+  return configlayout
+}
 
 addLayer("fa",{
   name: "factory layer", // This is optional, only used in a few places, If absent it just uses the layer id.
@@ -190,54 +222,38 @@ addLayer("fa",{
         "grid"
       ],
     },
-    designer() {
-      let configlayout=[]
-      if (player.fa.selectedmachine && player.fa.selectedmachine.config){
-        let data=player.fa.selectedmachine.config()
-        for (const [l,setting] of Object.entries(data)){
-          switch(setting.t){
-            case "label":
-              configlayout.push(["display-text",setting.v])
-              break
-            case "slider":
-              configlayout.push(["bad-slider",["player.fa.selectedmachine."+setting.v,setting.l,setting.u,setting.cb]])
-              break
-            case "text":
-              configlayout.push(["bad-text-input","player.fa.selectedmachine."+setting.v])
-              break
-            case "drop-down":
-              configlayout.push(["bad-drop-down",["player.fa.selectedmachine."+setting.v,setting.o],
-              {
-                "background-color":"black"
-              }])
-              break
-            case "toggle":
-              configlayout.push(["bad-toggle",["player.fa.selectedmachine."+setting.v,setting.o,setting.c,setting.cb]])
-              break
-            case "io":
-              let v="player.fa.selectedmachine."+setting.v
-              configlayout.push(["4way-bad-toggle",[[v+"[3]",v+"[0]",v+"[2]",v+"[1]"],["none","pull","push"],["gray","blue","orange"],function(){refreshtile("fa_designer",player.fa.selectedmachine.pos)}]])
-              
-          }
-        }
-      }
-      if (configlayout.length>0){configlayout.unshift(["clickable","destroy_selected"])}
-      return {
+    designer: {
         content: [
-        ["display-text",player.fa.pos],
-        ["layer-proxy",["fa_designer",[
-          ["row",[
-            "grid",
-            ["column",
-              configlayout,
-              {
-                "background-color": "#222222",
-                "width":configlayout.length>0?"200px":"20px",
-                "height":"400px",
-                "border-radius":"0px 10px 10px 0px"
-              }
+          //["display-text",function(){return player.fa.pos}],
+          ["layer-proxy",["fa_designer",[
+            ["row",[
+              "grid",
+              ["column",
+                [
+                  function(){
+                    let configlayout = machineconfiglayout()
+                    return [
+                      "column",
+                      configlayout,
+                      {
+                        "width":configlayout.length>0?"200px":"20px",
+                        "background-color":configlayout.length>0?"#ff0000":"#ffffff00",
+                        "transition":"background-color 1s",
+                      }
+                    ]
+                  }
+                ],
+                {
+                  "background-color":"#222222",
+                  "border-radius":"0px 10px 10px 0px",
+                  "padding-top":"20px",
+                  "padding-bottom":"20px",
+                  "width":"auto",
+                  "overflow":"hidden",
+                }
+              ]
             ],
-          ]],
+          ],
           "clickables",
           [
             "column",
@@ -248,12 +264,12 @@ addLayer("fa",{
           ],
         ]]],
       ]
-      }
-    },
+    }
   },
   layerShown(){return player.re.upgrades.includes(31)||"ghost"},
   tooltip(){return "expand the factory"}
 })
+
 
 //designer
 addLayer("fa_designer",{

@@ -660,9 +660,24 @@ function loadVue() {
 	})
   
   Vue.component('bad-toggle', {
-		props: ['layer', 'data'],
+    props: ['layer', 'data'],
+    template: `
+    <div style="margin-top:20px;margin-bottom:20px;font-size:0px;transform:rotate(45deg)">
+		<bad-toggle-base :layer="layer" :data="data" :rotate="0"></bad-toggle-base>
+    </div>
+		`,
+    
+  })
+  
+  Vue.component('bad-toggle-base', {
+		props: ['layer', 'data','rotate'],
 		template: `
-		<button class="smallUpg can" :id="'toggle-'+layer+'-'+data[0]" v-bind:style="{'background-color':(this.data[2]||[])[this.data[1].indexOf(accessvar(data[0]))]||'white','margin':'3px'}" 
+		<button class="smallUpg can" :id="'toggle-'+layer+'-'+data[0]" v-bind:style="
+    {
+      'transform':'rotate('+(rotate!==undefined?rotate:45)+'deg)',
+      'background-color':(this.data[2]||[])[this.data[1].indexOf(accessvar(data[0]))]||'white',
+      'margin':'3px'
+    }" 
     v-on:click="onclick()"
     @contextmenu.prevent="onrclick"
     ><div style="transform:rotate(-45deg)">{{accessvar(data[0])}}</div></button>
@@ -712,11 +727,11 @@ function loadVue() {
     
 		props: ['layer', 'data'],
 		template: `
-    <div style="font-size:0px;transform:rotate(45deg)">
-		<bad-toggle :layer="layer" :data="[data[0][0],data[1],data[2],data[3]]"></bad-toggle>
-		<bad-toggle :layer="layer" :data="[data[0][1],data[1],data[2],data[3]]"></bad-toggle><br>
-		<bad-toggle :layer="layer" :data="[data[0][2],data[1],data[2],data[3]]"></bad-toggle>
-		<bad-toggle :layer="layer" :data="[data[0][3],data[1],data[2],data[3]]"></bad-toggle>
+    <div style="margin-top:20px;margin-bottom:20px;font-size:0px;transform:rotate(45deg)">
+		<bad-toggle-base :layer="layer" :data="[data[0][0],data[1],data[2],data[3]]" :rotate="0"></bad-toggle-base>
+		<bad-toggle-base :layer="layer" :data="[data[0][1],data[1],data[2],data[3]]" :rotate="0"></bad-toggle-base><br>
+		<bad-toggle-base :layer="layer" :data="[data[0][2],data[1],data[2],data[3]]" :rotate="0"></bad-toggle-base>
+		<bad-toggle-base :layer="layer" :data="[data[0][3],data[1],data[2],data[3]]" :rotate="0"></bad-toggle-base>
     </div>
 		`,
   })
