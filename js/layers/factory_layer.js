@@ -227,42 +227,48 @@ addLayer("fa",{
           //["display-text",function(){return player.fa.pos}],
           ["layer-proxy",["fa_designer",[
             ["row",[
-              "grid",
               ["column",
                 [
-                  function(){
-                    let configlayout = machineconfiglayout()
-                    return [
-                      "column",
-                      configlayout,
-                      {
-                        "width":configlayout.length>0?"200px":"20px",
-                        "background-color":configlayout.length>0?"#ff0000":"#ffffff00",
-                        "transition":"background-color 1s",
+                  ["column",
+                    [
+                      function(){
+                        let configlayout = machineconfiglayout()
+                        return [
+                          "column",
+                          configlayout,
+                          {
+                            "width":configlayout.length>0?"200px":"20px",
+                            "transition":"background-color 1s",
+                          }
+                        ]
                       }
-                    ]
-                  }
+                    ],
+                    {
+                      "position":"absolute",
+                      "left":"0px",
+                      "top":"100px",
+                      "bottom":"100px",
+                      "background-color":"#22222288",
+                      "border-radius":"0px 10px 10px 0px",
+                      "padding-top":"20px",
+                      "padding-bottom":"20px",
+                      "width":"auto",
+                      "overflow":"hidden",
+                      "transition":"width 1s, height 1s",
+                    }
+                  ]
                 ],
                 {
-                  "background-color":"#222222",
-                  "border-radius":"0px 10px 10px 0px",
-                  "padding-top":"20px",
-                  "padding-bottom":"20px",
-                  "width":"auto",
-                  "overflow":"hidden",
-                  "transition":"width 1s, height 1s",
+                  "width":"200px"
                 }
-              ]
+              ],
+              "grid",
             ],
           ],
-          "clickables",
-          [
-            "column",
-            [
-              ["display-text", "hi"]
-            ],
-            "background-color: white; color: green"
-          ],
+          ["row",[
+            ["layer-proxy",["fa_machines",["grid"]]],
+            "clickables",
+          ]]
         ]]],
       ]
     }
@@ -412,6 +418,9 @@ addLayer("fa_designer",{
             break
           case "destroy":
             getGridData("fa",player.fa.pos).factory.create(id,"empty")
+            if(player.fa.selectedmachine){
+              if(player.fa.selectedmachine.pos==id)player.fa.selectedmachine=null
+            }
             break
         }
       }
@@ -426,5 +435,16 @@ addLayer("fa_designer",{
 //machine storage & crafting
 addLayer("fa_machines",{
   startData(){return{points:new Decimal(0)}},
-
+  grid: {
+    getStartData(){return 0},
+    cols: 5,
+    rows: 1,
+    getStyle(){
+      return {
+        "width":"70px",
+        "height":"70px",
+        "min-height":"0px",
+      }
+    }
+  }
 })
