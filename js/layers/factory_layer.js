@@ -1,3 +1,11 @@
+machines={
+  100:[
+    "pipe",
+    "crafter",
+    "drill",
+  ]
+}
+
 class FA_factory {
   constructor(){
     this.tiles={}
@@ -103,7 +111,7 @@ class FA_pipe extends FA_machine{
   modify_style(style){
     let spritepos=0
     for(let l=0;l<=3;l++){
-      if (this.IO[l]!=="none"){
+      if (this.IO[l]!=="no"){
         spritepos+=2**l
       }
     }
@@ -111,7 +119,7 @@ class FA_pipe extends FA_machine{
   }
   config(){
     return [
-      {v:"IO",t:"io"},
+      {v:"IO",t:"block"},
     ]
   }
 }
@@ -150,22 +158,25 @@ function machineconfiglayout(){
   if (player.fa.selectedmachine && player.fa.selectedmachine.config){
     let data=player.fa.selectedmachine.config()
     for (const [l,setting] of Object.entries(data)){
+      let v="player.fa.selectedmachine."+setting.v
       switch(setting.t){
         case "label":
           configlayout.push(["display-text",setting.v])
           break
         case "slider":
-          configlayout.push(["bad-slider",["player.fa.selectedmachine."+setting.v,setting.l,setting.u,setting.cb],{"pointer-events":"auto"}])
+          configlayout.push(["bad-slider",[v,setting.l,setting.u,setting.cb],{"pointer-events":"auto"}])
           break
         case "text":
-          configlayout.push(["bad-text-input","player.fa.selectedmachine."+setting.v,{"pointer-events":"auto"}])
+          configlayout.push(["bad-text-input",v,{"pointer-events":"auto"}])
           break
         case "toggle":
-          configlayout.push(["bad-toggle",["player.fa.selectedmachine."+setting.v,setting.o,setting.c,setting.cb],{"pointer-events":"auto"}])
+          configlayout.push(["bad-toggle",[v,setting.o,setting.c,setting.cb],{"pointer-events":"auto"}])
           break
         case "io":
-          let v="player.fa.selectedmachine."+setting.v
           configlayout.push(["4way-bad-toggle",[[v+"[3]",v+"[0]",v+"[2]",v+"[1]"],["none","pull","push"],["gray","blue","orange"],function(){refreshtile("fa_designer",player.fa.selectedmachine.pos)}],{"pointer-events":"auto"}])
+          break
+        case "block":
+          configlayout.push(["4way-bad-toggle",[[v+"[3]",v+"[0]",v+"[2]",v+"[1]"],["none","no"],["gray","red"],function(){refreshtile("fa_designer",player.fa.selectedmachine.pos)}],{"pointer-events":"auto"}])
           break
       }
     }
@@ -262,6 +273,10 @@ addLayer("fa",{
                   }
                 ],
                 function (){
+                  if(document.getElementById("fa_designer_grid")){
+                    console.log(document.getElementById("fa_designer_grid").getBoundingClientRect().top - 
+                    document.getElementsByClassName("layer-tab")[1].getBoundingClientRect().top)
+                  }
                   return {
                     "pointer-events": "none",
                     "position":"absolute",
