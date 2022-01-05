@@ -227,42 +227,38 @@ addLayer("fa",{
           //["display-text",function(){return player.fa.pos}],
           ["layer-proxy",["fa_designer",[
             ["row",[
+              "grid",
               ["column",
                 [
-                  ["column",
-                    [
-                      function(){
-                        let configlayout = machineconfiglayout()
-                        return [
-                          "column",
-                          configlayout,
-                          {
-                            "width":configlayout.length>0?"200px":"20px",
-                            "transition":"background-color 1s",
-                          }
-                        ]
+                  function(){
+                    let configlayout = machineconfiglayout()
+                    return [
+                      "column",
+                      configlayout,
+                      {
+                        "width":configlayout.length>0?"200px":"20px",
+                        "transition":"background-color 1s",
                       }
-                    ],
-                    {
-                      "position":"absolute",
-                      "left":"0px",
-                      "top":"100px",
-                      "bottom":"100px",
-                      "background-color":"#22222288",
-                      "border-radius":"0px 10px 10px 0px",
-                      "padding-top":"20px",
-                      "padding-bottom":"20px",
-                      "width":"auto",
-                      "overflow":"hidden",
-                      "transition":"width 1s, height 1s",
-                    }
-                  ]
+                    ]
+                  }
                 ],
-                {
-                  "width":"200px"
+                function (){
+                  return {
+                    "position":"absolute",
+                    "left":"0px",
+                    "top":"0px",
+                    //"left":`${accessvar("document.getElementById(\"fa_designer_grid\").getBoundingClientRect().left",0)-789+(player.fa.selectedmachine.pos|0)%100*52}px`,
+                    //"top":`${(Math.floor(player.fa.selectedmachine.pos|0)/100)*52+40}px`,
+                    "background-color":"#22222288",
+                    "border-radius":"0px 10px 10px 0px",
+                    "padding-top":"20px",
+                    "padding-bottom":"20px",
+                    "width":"auto",
+                    "overflow":"hidden",
+                    "transition":"width 1s, height 1s",
+                  }
                 }
               ],
-              "grid",
             ],
           ],
           ["row",[
