@@ -61,14 +61,36 @@ class FA_crafter extends FA_machine{
   }
   config(){
     return [
-      {v:"text",t:"label"},
-      {v:"symbol",t:"toggle",o:["C","cr","cra","craf","craft"],c:["#ffffff","#ffaaff","#ff77ff","#ff33ff","#ff00ff"]},
-      {v:"sprite",t:"label"},
-      {v:"spritepos",t:"slider",l:0,u:15},
       {v:"IO",t:"io"},
     ]
   }
 }
+
+class FA_drill extends FA_machine{
+  constructor(pos){
+    super(pos)
+    this.name="drill"
+    this.sprite="./drill_E.png"
+    this.spritepos=15
+    this.symbol="D"
+    this.IO=["none","none","none","none"]
+  }
+  modify_style(style){
+    let spritepos=0
+    for(let l=0;l<=3;l++){
+      if (this.IO[l]!=="none"){
+        spritepos+=2**l
+      }
+    }
+    style["background-position"]=`${-spritepos*100}% 0%`
+  }
+  config(){
+    return [
+      {v:"IO",t:"io"},
+    ]
+  }
+}
+
 class FA_pipe extends FA_machine{
   constructor(pos){
     super(pos)
@@ -133,28 +155,25 @@ function machineconfiglayout(){
           configlayout.push(["display-text",setting.v])
           break
         case "slider":
-          configlayout.push(["bad-slider",["player.fa.selectedmachine."+setting.v,setting.l,setting.u,setting.cb]])
+          configlayout.push(["bad-slider",["player.fa.selectedmachine."+setting.v,setting.l,setting.u,setting.cb],{"pointer-events":"auto"}])
           break
         case "text":
-          configlayout.push(["bad-text-input","player.fa.selectedmachine."+setting.v])
-          break
-        case "drop-down":
-          configlayout.push(["bad-drop-down",["player.fa.selectedmachine."+setting.v,setting.o],
-          {
-            "background-color":"black"
-          }])
+          configlayout.push(["bad-text-input","player.fa.selectedmachine."+setting.v,{"pointer-events":"auto"}])
           break
         case "toggle":
-          configlayout.push(["bad-toggle",["player.fa.selectedmachine."+setting.v,setting.o,setting.c,setting.cb]])
+          configlayout.push(["bad-toggle",["player.fa.selectedmachine."+setting.v,setting.o,setting.c,setting.cb],{"pointer-events":"auto"}])
           break
         case "io":
           let v="player.fa.selectedmachine."+setting.v
-          configlayout.push(["4way-bad-toggle",[[v+"[3]",v+"[0]",v+"[2]",v+"[1]"],["none","pull","push"],["gray","blue","orange"],function(){refreshtile("fa_designer",player.fa.selectedmachine.pos)}]])
+          configlayout.push(["4way-bad-toggle",[[v+"[3]",v+"[0]",v+"[2]",v+"[1]"],["none","pull","push"],["gray","blue","orange"],function(){refreshtile("fa_designer",player.fa.selectedmachine.pos)}],{"pointer-events":"auto"}])
           break
       }
     }
   }
-  if (configlayout.length>0){configlayout.unshift(["clickable","destroy_selected"])}
+  if (configlayout.length>0){
+    configlayout.unshift(["clickable","destroy_selected"])
+    configlayout.unshift(["blank",30])
+  }
   return configlayout
 }
 
@@ -236,26 +255,25 @@ addLayer("fa",{
                       "column",
                       configlayout,
                       {
-                        "width":configlayout.length>0?"200px":"20px",
-                        "transition":"background-color 1s",
+                        "width":configlayout.length>0?`${52+52+20}px`:"20px",
+                        "transition":"background-color 1s"
                       }
                     ]
                   }
                 ],
                 function (){
                   return {
+                    "pointer-events": "none",
                     "position":"absolute",
-                    "left":"0px",
-                    "top":"0px",
-                    //"left":`${accessvar("document.getElementById(\"fa_designer_grid\").getBoundingClientRect().left",0)-789+(player.fa.selectedmachine.pos|0)%100*52}px`,
-                    //"top":`${(Math.floor(player.fa.selectedmachine.pos|0)/100)*52+40}px`,
+                    "left":`${accessvar("document.getElementById(\"fa_designer_grid\").getBoundingClientRect().left-document.getElementsByClassName(\"layer-tab\")[1].getBoundingClientRect().left",0)+(accessvar("player.fa.selectedmachine.pos",-100)       )%100*52-10}px`,
+                    "top":`${accessvar("document.getElementById(\"fa_designer_grid\").getBoundingClientRect().top -document.getElementsByClassName(\"layer-tab\")[1].getBoundingClientRect().top ",0)+((accessvar("player.fa.selectedmachine.pos",-10000)/100)|0)*52-10}px`,
                     "background-color":"#22222288",
-                    "border-radius":"0px 10px 10px 0px",
+                    "border-radius":"0px 10px 10px 10px",
                     "padding-top":"20px",
                     "padding-bottom":"20px",
                     "width":"auto",
-                    "overflow":"hidden",
                     "transition":"width 1s, height 1s",
+                    "z-index":"40",
                   }
                 }
               ],
@@ -316,12 +334,16 @@ addLayer("fa_designer",{
       
       style(){
         return {
-          "width":"70px",
-          "height":"70px",
+          "pointer-events":"auto",
+          "width":"40px",
+          "height":"40px",
           "min-height":"0px",
           "background-image":'url("./tools_E.png")',
           "background-size":"auto 100%",
           "background-position":"100% 0%",
+          "position":"absolute",
+          "top":"5px",
+          "right":"5px",
         }
       }
     }
@@ -410,7 +432,11 @@ addLayer("fa_designer",{
       if (prevpos==player.fa.pos){
         switch(player.fa.toolmode){
           case "config":
-            player.fa.selectedmachine=getGridData("fa",player.fa.pos).factory.getmachine(id)
+            if(accessvar("player.fa.selectedmachine.pos")===id){
+              player.fa.selectedmachine=null
+            }else{
+              player.fa.selectedmachine=getGridData("fa",player.fa.pos).factory.getmachine(id)
+            }
             break
           case "destroy":
             getGridData("fa",player.fa.pos).factory.create(id,"empty")
