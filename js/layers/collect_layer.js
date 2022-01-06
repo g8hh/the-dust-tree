@@ -35,6 +35,8 @@ addLayer("co",{
       title: "add 999 to all resources",
       canClick(){return true},
       onClick(){
+        player.co.scroungeable_dust = player.co.scroungeable_dust.sub(999)
+        player.co.lifetime_scrounged = player.co.lifetime_scrounged.add(999)
         for (let id in cr_data.resources){
           id=Number(id)
           cr_setitem(id,cr_getitem(id).add(999))

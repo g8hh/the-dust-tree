@@ -31,10 +31,6 @@ cr_data={
       {name:"blueprint chip",c:"#b9bffb"},
       {name:"divisive chip",c:"#ffd541"},
     ],
-    500:[//factory parts (1)
-      {name:"pipe",c:"#b9bffb"},
-      {name:"crafter",c:"#b9bffb"}
-    ]
   },
   craft_data:{
     "dustCdust":[{a:1,r:"compressed dust"}],

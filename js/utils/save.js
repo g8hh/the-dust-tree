@@ -159,6 +159,7 @@ function fixSave() {
   ma_fixcomponents()
   ma_updatesprites()
   fa_fixfactories()
+  fa_machineamounts = new Proxy(player.fa_machines.machineamounts, fa_machineamountproxy);
   refreshgrid("ma")
 }
 function fixData(defaultData, newData) {

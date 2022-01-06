@@ -121,7 +121,6 @@ class MA_port extends MA_component {
     this.component_type="port"
     this.mode=""
     this.port=0
-    this.portindex=0
     this._savevalues=["port","mode"]
   }
   clear(){
@@ -199,6 +198,12 @@ class MA_port extends MA_component {
           let exv=port.data[port.index]
           if (exv==v){
             port.index+=1
+            if(ma_checkwin()){
+              player.ma.error_message=`all tests passed, circuit seems functional!`
+              player.ma.error_port=Infinity
+              player.ma.paused=true
+              player.ma.solved_puzzles[player.ma.puzzlename]=true
+            }
           }else{
             console.log(exv,v,"fail")
             player.ma.error_message=`expected ${exv} at ouput ${this.port}, instead got ${v}`
@@ -569,6 +574,7 @@ function ma_bubble(txt){
 ma_puzzledata={
   100: [
     {
+      imgpos: 1,
       title: "nand",
       desc: "nand I0 with I1, send to O0",
       inputs: [
@@ -580,6 +586,7 @@ ma_puzzledata={
       rtests_required: 0
     },
     {
+      imgpos: 2,
       title: "sub",
       desc: "subtract I1 from I0, send to O0\n(subtraction is done with the logic slate)",
       inputs: [
@@ -597,6 +604,7 @@ ma_puzzledata={
   ],
   200: [
     {
+      imgpos: 3,
       title: "low",
       desc: "send a stream of -2 to O0, one for each input 0",
       inputs: [[]],//get pushed to all free wires with a blue io port next to them. (order goes up left right bottom)
@@ -607,6 +615,7 @@ ma_puzzledata={
       rtests_required: 50
     },
     {
+      imgpos: 4,
       title: "high",
       desc: "send a stream of +2 to O0, one for each input 0",
       inputs: [[]],//get pushed to all free wires with a blue io port next to them. (order goes up left right bottom)
@@ -617,6 +626,7 @@ ma_puzzledata={
       rtests_required: 50
     },
     {
+      imgpos: 5,
       title: "filter",
       desc: "send only values from I0 greater than 0 to O0",
       inputs: [[]],
@@ -628,6 +638,7 @@ ma_puzzledata={
       rtests_required: 50
     },
     {
+      imgpos: 6,
       title: "negate negatives",
       desc: "convert each negative number into zero.",
       inputs: [[]],
@@ -639,6 +650,7 @@ ma_puzzledata={
       rtests_required: 50
     },
     {
+      imgpos: 7,
       title: "add",
       desc: "add I0 to I1, send to O0",
       inputs: [
@@ -656,6 +668,7 @@ ma_puzzledata={
   ],
   300:[
     {
+      imgpos: 8,
       title: "switch",
       desc: "if I2<=0, send I0 to O0, else send I1 to O0",
       inputs: [
@@ -686,9 +699,8 @@ ma_maxcooldown=20
 ma_cooldown=0
 
 function ma_loadpuzzle(id){
-  console.log("loading",id)
   let puz=ma_puzzledata[id]
-  console.log(puz.title)
+  player.ma.puzzlename=puz.title
   player.ma.inputports=[]
   for (l=0;l<puz.inputs.length;l++){
     player.ma.inputports[l]={data:[...puz.inputs[l]],index:0}
@@ -732,9 +744,18 @@ addLayer("pt",{
         return ma_puzzledata[id].title
       }
     },
-    style(_,id){
-      return {
-        "background-color": ma_puzzledata[id]?"#ffffff":"#222222"
+    getStyle(_,id){
+      return ma_puzzledata[id]!==undefined?{
+        "background-image": "url('./puzzle_icons_E.png')",
+        "background-size": "auto 100%",
+        "background-position": player.ma.solved_puzzles[ma_puzzledata[id].title]?`-${ma_puzzledata[id].imgpos}00%`:"0%",
+        "background-color":"#b9bffb",
+        "pointer-events":"auto",
+        "border":"none",
+      }:{
+        "background-color":"#222222",
+        "pointer-events":"none",
+        "transform":"scale(0.9)"
       }
     },
     onClick(_,id){
@@ -750,11 +771,11 @@ function ma_checkwin(){
   let win=true
   for (let l=0;l<player.ma.outputports.length;l++){
     let port=player.ma.outputports[l]
-    if (!port.portindex>=port.data.length){
+    if (!(port.index>=port.data.length)){
       win=false
     }
   }
-  player.ma.puzzledone=win
+  return win
 }
 
 //puzzle IO display
@@ -843,6 +864,14 @@ function refreshtile(layer,id){
   let data=getGridData(layer,id)
   setGridData(layer,id,data===false?true:false)//set it to a value it definitely isn't.
   setGridData(layer,id,data)
+}
+
+function refreshneighbors(layer,id){
+  refreshtile(layer,id)
+  for (let l=0;l<=3;l++){
+    let o=cr_orderofchecks[l]
+    refreshtile(layer,id+o.x+o.y*100)
+  }
 }
 
 function refreshgrid(layer){
@@ -1025,9 +1054,6 @@ function ma_setcomponent(x,y,type){
   })
 }
 
-
-
-
 addLayer("ma", {
   name: "machine design",
   symbol: "MA",
@@ -1038,6 +1064,8 @@ addLayer("ma", {
       fastfwd:false,
       ticklength: .5,
       simtime: 0, //time incemented in the update loop by diff, will almost never be above ticklength
+      solved_puzzles: {},
+      puzzlename: "",
       inputports: [],
       outputports: [],
       error_message:"",
@@ -1056,9 +1084,9 @@ addLayer("ma", {
         progress() {return player.ma.simtime/player.ma.ticklength},
     },
   },
-  update: function(diff){
+  update(diff){
     player.ma.ticklength=1
-    player.ma.ticklength*=layers.ma.fastfwd?.01:1
+    player.ma.ticklength*=layers.ma.fastfwd?.05:1
     diff=Math.min(diff,1)
     if(!player.ma.paused)player.ma.simtime+=diff
     for (;player.ma.simtime>player.ma.ticklength;player.ma.simtime-=player.ma.ticklength){
@@ -1497,7 +1525,7 @@ addLayer("ma", {
         but it is absolutely a critical part of your arsenal.`],
         ["display-image",["./guide/guide_4_1_E.png"]],
         ["display-text",`
-        signal dynamics are a confusing thing. the entire concept of responsive dust carrying almost any integer
+        signal dynamics are a confusing thing. the entire concept of responsive dust carrying almost any number
         is even less understood. a signal, unless there is a cable to move along or a slate to comsume it, will remain
         stationary, retaining its exact value. signals will travel along every single path available to them, so a prepared slate
         will not be able to rip a signal from its path if it still has a cable to move along, but it will still receive its value.

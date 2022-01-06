@@ -1,9 +1,14 @@
 machines={
   100:[
-    "pipe",
-    "crafter",
-    "drill",
+    {name:"pipe"},
+    {name:"crafter"},
+    {name:"drill"},
   ]
+}
+for (const [rowi,row] of Object.entries(machines)){
+  for (const [i,machine] of Object.entries(row)){
+    machines[rowi+i]=machine
+  }
 }
 
 class FA_factory {
@@ -38,6 +43,27 @@ function fa_createmachine(type,pos){
 class FA_machine {
   constructor(pos){
     this.pos=pos
+    this.IO=["none","none","none","none"]
+  }
+  neighbor(side){
+    let o=cr_orderofchecks[side]
+    let machine=getGridData("fa",player.fa.pos).factory.getmachine(this.pos+o.x+o.y*100)
+    return machine
+  }
+  open(side){
+    return this.neighbor(side).IO[(side+2)%4]!=="none" && this.IO[side]!=="none"
+  }
+  io_port(side){
+    return this.neighbor(side).IO[(side+2)%4]
+  }
+  get_dir_sprite(){
+    let spritepos=0
+    for(let l=0;l<=3;l++){
+      if (this.open(l)){
+        spritepos+=2**l
+      }
+    }
+    return spritepos
   }
 }
 class FA_empty extends FA_machine{
@@ -56,16 +82,9 @@ class FA_crafter extends FA_machine{
     this.sprite="./crafter_E.png"
     this.spritepos=15
     this.symbol="C"
-    this.IO=["none","none","none","none"]
   }
   modify_style(style){
-    let spritepos=0
-    for(let l=0;l<=3;l++){
-      if (this.IO[l]!=="none"){
-        spritepos+=2**l
-      }
-    }
-    style["background-position"]=`${-spritepos*100}% 0%`
+    style["background-position"]=`${-this.get_dir_sprite()*100}% 0%`
   }
   config(){
     return [
@@ -81,16 +100,9 @@ class FA_drill extends FA_machine{
     this.sprite="./drill_E.png"
     this.spritepos=15
     this.symbol="D"
-    this.IO=["none","none","none","none"]
   }
   modify_style(style){
-    let spritepos=0
-    for(let l=0;l<=3;l++){
-      if (this.IO[l]!=="none"){
-        spritepos+=2**l
-      }
-    }
-    style["background-position"]=`${-spritepos*100}% 0%`
+    style["background-position"]=`${-this.get_dir_sprite()*100}% 0%`
   }
   config(){
     return [
@@ -106,16 +118,10 @@ class FA_pipe extends FA_machine{
     this.sprite="./pipe_E.png"
     this.spritepos=0
     this.symbol="P"+Math.floor(Math.random()*10)
-    this.IO=["none","none","none","none"]
+    this.IO=["open","open","open","open"]
   }
   modify_style(style){
-    let spritepos=0
-    for(let l=0;l<=3;l++){
-      if (this.IO[l]!=="no"){
-        spritepos+=2**l
-      }
-    }
-    style["background-position"]=`${-spritepos*100}% 0%`
+    style["background-position"]=`${-this.get_dir_sprite()*100}% 0%`
   }
   config(){
     return [
@@ -136,7 +142,7 @@ function fa_fixfactories(){
         if (pos%100<=12){
           //console.log(`fixxed ${pos}`,machine)
           if(machine){
-            newfactory.tiles[pos]=fa_createmachine(machine.name)
+            newfactory.tiles[pos]=fa_createmachine(machine.name,pos)
             for (const [key,value] of Object.entries(machine)){
               newfactory.tiles[pos][key]=value
             }
@@ -173,10 +179,10 @@ function machineconfiglayout(){
           configlayout.push(["bad-toggle",[v,setting.o,setting.c,setting.cb],{"pointer-events":"auto"}])
           break
         case "io":
-          configlayout.push(["4way-bad-toggle",[[v+"[3]",v+"[0]",v+"[2]",v+"[1]"],["none","pull","push"],["gray","blue","orange"],function(){refreshtile("fa_designer",player.fa.selectedmachine.pos)}],{"pointer-events":"auto"}])
+          configlayout.push(["4way-bad-toggle",[[v+"[3]",v+"[0]",v+"[2]",v+"[1]"],["none","pull","push"],["gray","blue","orange"],function(){refreshneighbors("fa_designer",player.fa.selectedmachine.pos)}],{"pointer-events":"auto"}])
           break
         case "block":
-          configlayout.push(["4way-bad-toggle",[[v+"[3]",v+"[0]",v+"[2]",v+"[1]"],["none","no"],["gray","red"],function(){refreshtile("fa_designer",player.fa.selectedmachine.pos)}],{"pointer-events":"auto"}])
+          configlayout.push(["4way-bad-toggle",[[v+"[3]",v+"[0]",v+"[2]",v+"[1]"],["open","none"],["green","gray"],function(){refreshneighbors("fa_designer",player.fa.selectedmachine.pos)}],{"pointer-events":"auto"}])
           break
       }
     }
@@ -273,10 +279,6 @@ addLayer("fa",{
                   }
                 ],
                 function (){
-                  if(document.getElementById("fa_designer_grid")){
-                    console.log(document.getElementById("fa_designer_grid").getBoundingClientRect().top - 
-                    document.getElementsByClassName("layer-tab")[1].getBoundingClientRect().top)
-                  }
                   return {
                     "pointer-events": "none",
                     "position":"absolute",
@@ -343,8 +345,9 @@ addLayer("fa_designer",{
       onClick(){
         if (player.fa.selectedmachine){
           getGridData("fa",player.fa.pos).factory.create(player.fa.selectedmachine.pos,"empty")
-          player.fa.selectedmachine=getGridData("fa",player.fa.pos).factory.getmachine(player.fa.selectedmachine.pos)
+          player.fa.selectedmachine=null
         }
+        refreshtile("fa_designer",id)
       },
       
       style(){
@@ -390,6 +393,7 @@ addLayer("fa_designer",{
       style["background-image"]=`url("${machine.sprite}")`
       style["background-size"]="auto 100%"
       style["background-position"]=`${-machine.spritepos*100}% 0%`
+      style["transition"]=`all .5s, background-position 1ms`
       if (machine.modify_style) {machine.modify_style(style)}
       return style  
     },
@@ -435,8 +439,8 @@ addLayer("fa_designer",{
         }
       }
 
-      refreshgrid("fa_designer")
-      refreshtile("fa_designer",id)
+      //refreshgrid("fa_designer")
+      refreshneighbors("fa_designer",id)
     },
     onRClick(_,id){
       let prevpos=player.fa.pos
@@ -462,16 +466,26 @@ addLayer("fa_designer",{
         }
       }
 
-      refreshgrid("fa_designer")
-      refreshtile("fa_designer",id)
+      refreshneighbors("fa_designer",id)
     },
     onHold(data,id){this.onClick(data,id)}
   },
 })
 
+
+//the proxy
+fa_machineamountproxy={
+  get(target,prop) {
+    return prop in target?target[prop]:0
+  }
+}
+
 //machine storage & crafting
 addLayer("fa_machines",{
-  startData(){return{points:new Decimal(0)}},
+  startData(){return{
+    points:new Decimal(0),
+    machineamounts:{},
+  }},
   grid: {
     getStartData(){return 0},
     cols: 5,
