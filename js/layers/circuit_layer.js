@@ -403,7 +403,7 @@ class MA_togglable_slate extends MA_slate_base {
           rd.push(l)
         }
       }
-      if(!(rd[0]%2==rd[1]%2)){
+      if(!(rd[0].mod(2).equals(rd[1].mod(2)))){
         for (l=0;l<=3;l++){
           if (this.neighbor(l).peek(l)!==undefined){
             rv.push(this.neighbor(l).pull(l))
