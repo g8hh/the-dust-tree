@@ -701,6 +701,7 @@ ma_cooldown=0
 function ma_loadpuzzle(id){
   let puz=ma_puzzledata[id]
   player.ma.puzzlename=puz.title
+  player.ma.puzzledesc=puz.desc
   player.ma.inputports=[]
   for (l=0;l<puz.inputs.length;l++){
     player.ma.inputports[l]={data:[...puz.inputs[l]],index:0}
@@ -1066,6 +1067,7 @@ addLayer("ma", {
       simtime: 0, //time incemented in the update loop by diff, will almost never be above ticklength
       solved_puzzles: {},
       puzzlename: "",
+      puzzledesc: "",
       inputports: [],
       outputports: [],
       error_message:"",
@@ -1464,6 +1466,19 @@ addLayer("ma", {
     },
     puzzles: {
       content:[
+        ["column",[
+          ["raw-html",function(){
+            return `
+            <div style="
+            text-align: left;
+            width: 400px;
+            height: 100px;
+            ">
+            <span style="font-size:40px">${player.ma.puzzlename}</span><br>
+            task: ${player.ma.puzzledesc}
+            </div>
+          `}
+        ]]],
         ["layer-proxy",["pt",
           [
             "grid"
