@@ -403,7 +403,7 @@ class MA_togglable_slate extends MA_slate_base {
           rd.push(l)
         }
       }
-      if(!(rd[0].mod(2).equals(rd[1].mod(2)))){
+      if(!(rd[0]%2==rd[1]%2)){
         for (l=0;l<=3;l++){
           if (this.neighbor(l).peek(l)!==undefined){
             rv.push(this.neighbor(l).pull(l))
@@ -411,7 +411,7 @@ class MA_togglable_slate extends MA_slate_base {
         }
         for (l=0;l<=1;l++){
           if(this.neighbor(this.rotate(rd[l],2)).component_type!==""){
-            if(rv[1-l].gt(0)){
+            if(rv[1-l].compare(0,1)==1){
               this.outputcache[this.rotate(rd[l],2)]=rv[l]
             }
           }
