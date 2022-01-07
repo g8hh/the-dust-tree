@@ -1,13 +1,14 @@
-machines={
-  100:[
+fa_machine_picker={
+  1:[
     {name:"pipe"},
     {name:"crafter"},
     {name:"drill"},
+    {name:"port"},
   ]
 }
-for (const [rowi,row] of Object.entries(machines)){
+for (const [rowi,row] of Object.entries(fa_machine_picker)){
   for (const [i,machine] of Object.entries(row)){
-    machines[rowi+i]=machine
+    fa_machine_picker[`${rowi}0${Number(i)+1}`]=machine
   }
 }
 
@@ -51,10 +52,10 @@ class FA_machine {
     return machine
   }
   open(side){
-    return this.neighbor(side).IO[(side+2)%4]!=="none" && this.IO[side]!=="none"
+    return this.neighbor(side).io_port(side)!=="none" && this.IO[side]!=="none"
   }
   io_port(side){
-    return this.neighbor(side).IO[(side+2)%4]
+    return this.IO[(side+2)%4]
   }
   get_dir_sprite(){
     let spritepos=0
@@ -92,7 +93,6 @@ class FA_crafter extends FA_machine{
     ]
   }
 }
-
 class FA_drill extends FA_machine{
   constructor(pos){
     super(pos)
@@ -110,7 +110,6 @@ class FA_drill extends FA_machine{
     ]
   }
 }
-
 class FA_pipe extends FA_machine{
   constructor(pos){
     super(pos)
@@ -127,6 +126,52 @@ class FA_pipe extends FA_machine{
     return [
       {v:"IO",t:"block"},
     ]
+  }
+}
+class FA_port extends FA_machine{
+  constructor(pos){
+    super(pos)
+    this.name="port"
+    this.sprite="./port_E.png"
+    this.spritepos=0
+    this.symbol="P"+Math.floor(Math.random()*10)
+    this.IO=["open","open","open","open"]
+    this.mode="push"
+  }
+  modify_style(style){
+    style["background-position"]=`${-this.get_sprite()*100}% 0%`
+  }
+  config(){
+    return [
+      {v:"mode",t:"toggle",o:["pull","push"],c:["#249fde","#f9a31b"]},
+    ]
+  }
+  getside(){
+    let dirs=[]
+    if (this.pos%100==2){dirs.push(0)}
+    if (((this.pos/100)|0)==2){dirs.push(1)}
+    if (this.pos%100==12){dirs.push(2)}
+    if (((this.pos/100)|0)==12){dirs.push(3)}
+    if(dirs.length==1)return dirs.pop()
+    return 4
+  }
+  get_sprite(){
+    let spr=this.get_rot_sprite()
+    if(spr==16)return spr
+    spr+=this.mode=="push"?2:0
+    return spr
+  }
+  get_rot_sprite(){
+    switch (this.getside()){
+      case  0: return  1
+      case  1: return  5
+      case  2: return  9
+      case  3: return 13
+      default: return 16
+    }
+  }
+  io_port(side){
+    return (side+2)%4==this.getside()?"open":"none"
   }
 }
 
@@ -155,7 +200,7 @@ function fa_fixfactories(){
 }
 
 fa_machinenames={}
-for (const [_,machine] of Object.entries([FA_pipe,FA_crafter,FA_empty])){
+for (const [_,machine] of Object.entries([FA_pipe,FA_crafter,FA_drill,FA_port,FA_empty])){
   fa_machinenames[new machine().name]=machine
 }
 
@@ -179,10 +224,10 @@ function machineconfiglayout(){
           configlayout.push(["bad-toggle",[v,setting.o,setting.c,setting.cb],{"pointer-events":"auto"}])
           break
         case "io":
-          configlayout.push(["4way-bad-toggle",[[v+"[3]",v+"[0]",v+"[2]",v+"[1]"],["none","pull","push"],["gray","blue","orange"],function(){refreshneighbors("fa_designer",player.fa.selectedmachine.pos)}],{"pointer-events":"auto"}])
+          configlayout.push(["4way-bad-toggle",[[v+"[3]",v+"[0]",v+"[2]",v+"[1]"],["none","pull","push"],["#4a5462","#249fde","#f9a31b"],function(){refreshneighbors("fa_designer",player.fa.selectedmachine.pos)}],{"pointer-events":"auto"}])
           break
         case "block":
-          configlayout.push(["4way-bad-toggle",[[v+"[3]",v+"[0]",v+"[2]",v+"[1]"],["open","none"],["green","gray"],function(){refreshneighbors("fa_designer",player.fa.selectedmachine.pos)}],{"pointer-events":"auto"}])
+          configlayout.push(["4way-bad-toggle",[[v+"[3]",v+"[0]",v+"[2]",v+"[1]"],["open","none"],["#14a02e","#4a5462"],function(){refreshneighbors("fa_designer",player.fa.selectedmachine.pos)}],{"pointer-events":"auto"}])
           break
       }
     }
@@ -212,6 +257,8 @@ addLayer("fa",{
 
       toolmode:"destroy",
       selectedmachine:null,
+
+      placemachine:"pipe",
     }
   },
   update(diff){
@@ -240,6 +287,7 @@ addLayer("fa",{
         height:"30px",
         "max-height":"30px",
         "border-radius":"0px",
+        "border":"none",
         "margin": "0px",
         "background-color":data.col,
         "overflow": "hidden"
@@ -282,9 +330,9 @@ addLayer("fa",{
                   return {
                     "pointer-events": "none",
                     "position":"absolute",
-                    "left":`${accessvar("document.getElementById(\"fa_designer_grid\").getBoundingClientRect().left-document.getElementsByClassName(\"layer-tab\")[1].getBoundingClientRect().left",0)+(accessvar("player.fa.selectedmachine.pos",-100)       )%100*52-10}px`,
-                    "top":`${accessvar("document.getElementById(\"fa_designer_grid\").getBoundingClientRect().top -document.getElementsByClassName(\"layer-tab\")[1].getBoundingClientRect().top ",0)+((accessvar("player.fa.selectedmachine.pos",-10000)/100)|0)*52-10}px`,
-                    "background-color":"#22222288",
+                    "left":`${accessvar("document.getElementById(\"fa_designer_grid\").getBoundingClientRect().left-document.getElementsByClassName(\"layer-tab\")[1].getBoundingClientRect().left",0)+( accessvar("player.fa.selectedmachine.pos",  -100)%100   )*52-10}px`,
+                    "top": `${accessvar("document.getElementById(\"fa_designer_grid\").getBoundingClientRect().top -document.getElementsByClassName(\"layer-tab\")[1].getBoundingClientRect().top ",0)+((accessvar("player.fa.selectedmachine.pos",-10000)/100)|0)*52-10}px`,
+                    "background-color":"#4a546288",
                     "border-radius":"0px 10px 10px 10px",
                     "padding-top":"20px",
                     "padding-bottom":"20px",
@@ -297,8 +345,9 @@ addLayer("fa",{
             ],
           ],
           ["row",[
-            ["layer-proxy",["fa_machines",["grid"]]],
-            "clickables",
+            ["layer-proxy",["fa_machines",[
+              ["grid",[1,2,3]]
+            ]]],
           ]]
         ]]],
       ]
@@ -321,14 +370,11 @@ addLayer("fa_designer",{
     }
   },
   clickables:{
-    11: {
+    "rclicksetting": {
       canClick: true,
       onClick(){player.fa.toolmode=player.fa.toolmode=="config"?"destroy":"config"},
       style(){
         return {
-          "width":"70px",
-          "height":"70px",
-          "min-height":"0px",
           "background-image":'url("./tools_E.png")',
           "background-size":"auto 100%",
           "background-position":player.fa.toolmode=="destroy"?"100% 0%":"0% 0%"
@@ -345,9 +391,9 @@ addLayer("fa_designer",{
       onClick(){
         if (player.fa.selectedmachine){
           getGridData("fa",player.fa.pos).factory.create(player.fa.selectedmachine.pos,"empty")
+          refreshneighbors("fa_designer",player.fa.selectedmachine.pos)
           player.fa.selectedmachine=null
         }
-        refreshtile("fa_designer",id)
       },
       
       style(){
@@ -391,7 +437,7 @@ addLayer("fa_designer",{
         "background-color":col,
       }
       style["background-image"]=`url("${machine.sprite}")`
-      style["background-size"]="auto 100%"
+      style["background-size"]="cover"
       style["background-position"]=`${-machine.spritepos*100}% 0%`
       style["transition"]=`all .5s, background-position 1ms`
       if (machine.modify_style) {machine.modify_style(style)}
@@ -424,7 +470,7 @@ addLayer("fa_designer",{
 
       }else{
         let machine=getGridData("fa",player.fa.pos).factory.getmachine(id)
-        return machine.symbol
+        //return machine.symbol
       }
     },
     onClick(_,id){
@@ -435,7 +481,7 @@ addLayer("fa_designer",{
       if (Math.floor(id/100)==13 && Math.floor(player.fa.pos/100)<20)player.fa.pos+=100
       if (prevpos==player.fa.pos){
         if(getGridData("fa",player.fa.pos).factory.getmachine(id).name==="empty"){
-          getGridData("fa",player.fa.pos).factory.create(id,"pipe")
+          getGridData("fa",player.fa.pos).factory.create(id,player.fa.placemachine)
         }
       }
 
@@ -488,14 +534,36 @@ addLayer("fa_machines",{
   }},
   grid: {
     getStartData(){return 0},
-    cols: 5,
-    rows: 1,
-    getStyle(){
-      return {
+    cols: 7,
+    rows: 3,
+    onClick(_,id){
+      if (id==107){
+        return layers.fa_designer.clickables.rclicksetting.onClick()
+      }
+      if (fa_machine_picker[id]){
+        player.fa.placemachine=fa_machine_picker[id].name
+      }
+    },
+    getStyle(_,id){
+      let style= {
+        "background-color":"#b9bffb",
         "width":"70px",
         "height":"70px",
         "min-height":"0px",
+        "background-size":"cover",
+        "background-position":`-${id%100-1}00% 0%`,
       }
+      if (fa_machine_picker[id]){
+        style["background-image"]="url('./machines_E.png')"
+      }
+      if (id==107){
+        for (const [k,v] of Object.entries(layers.fa_designer.clickables.rclicksetting.style())){
+          style[k]=v
+        }
+      }
+      return style
+    },
+    getTitle(_,id){
     }
   }
 })

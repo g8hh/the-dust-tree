@@ -396,7 +396,23 @@ function loadVue() {
 		props: ['layer', 'data'],
 		template: `
     <div><gridable :layer = "layer" :data = "data" v-bind:style="tmp[layer].componentStyles.gridable"></gridable></div>
-	`
+    `,
+	})
+
+	Vue.component('grid-tiles', {
+		props: ['layer', 'data'],
+		template: `
+		<div v-if="tmp[layer].grid" class="upgTable" :id="layer+'_grid'">
+			<div v-for="row in (tmp[layer].grid.rows)" class="upgRow">
+				<div v-for="col in tmp[layer].grid.cols"><div v-if="run(layers[layer].grid.getUnlocked, layers[layer].grid, row*100+col)"
+					class="upgAlign" v-bind:style="{'margin': '1px',  'height': 'inherit',}">
+          <div v-if="data.includes(row*100+col)">
+  					<gridable :layer = "layer" :data = "row*100+col" v-bind:style="tmp[layer].componentStyles.gridable"></gridable>
+          </div>
+				</div></div>
+			</div>
+		</div>
+    `,
 	})
 
 	Vue.component('gridable', {
@@ -727,7 +743,7 @@ function loadVue() {
     
 		props: ['layer', 'data'],
 		template: `
-    <div style="margin-top:20px;margin-bottom:20px;font-size:0px;transform:rotate(45deg)">
+    <div style="margin-top:20px;margin-bottom:20px;padding:5px;font-size:0px;transform:rotate(45deg)">
 		<bad-toggle-base :layer="layer" :data="[data[0][0],data[1],data[2],data[3]]" :rotate="0"></bad-toggle-base>
 		<bad-toggle-base :layer="layer" :data="[data[0][1],data[1],data[2],data[3]]" :rotate="0"></bad-toggle-base><br>
 		<bad-toggle-base :layer="layer" :data="[data[0][2],data[1],data[2],data[3]]" :rotate="0"></bad-toggle-base>
