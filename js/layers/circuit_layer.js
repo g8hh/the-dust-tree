@@ -146,7 +146,7 @@ class MA_port extends MA_component {
       bottom:         0%;
       left:           0%;
       right:          0%;
-      background-color:#4a546244;
+      background-color:#22222244;
       "></div>${this.port} ${
         this.mode=="I"?
         player.ma.inputports[this.port]?player.ma.inputports[this.port].index:".":
@@ -203,6 +203,7 @@ class MA_port extends MA_component {
               player.ma.error_port=Infinity
               player.ma.paused=true
               player.ma.solved_puzzles[player.ma.puzzlename]=true
+              player.ma.best_parts[player.ma.puzzlename]
             }
           }else{
             console.log(exv,v,"fail")
@@ -228,7 +229,7 @@ class MA_slate_base extends MA_component {
     position: absolute;
     right:5%;
     border-radius:10px;
-    background-color:#4a546244;
+    background-color:#22222244;
     min-width:30px;
     ">${this.outputcache[0]!==undefined?this.outputcache[0].toFraction():""}</div>
     <div style="width:100%;justify-content: center;display:flex">
@@ -237,7 +238,7 @@ class MA_slate_base extends MA_component {
     bottom:5%;
     text-align: center;
     border-radius:10px;
-    background-color:#4a546244;
+    background-color:#22222244;
     min-width:30px;
     ">${this.outputcache[1]!==undefined?this.outputcache[1].toFraction():""}</div>
     </div>
@@ -245,7 +246,7 @@ class MA_slate_base extends MA_component {
     position: absolute;
     left:5%;
     border-radius:10px;
-    background-color:#4a546244;
+    background-color:#22222244;
     min-width:30px;
     ">${this.outputcache[2]!==undefined?this.outputcache[2].toFraction():""}</div>
     <div style="width:100%;justify-content: center;display:flex">
@@ -257,7 +258,7 @@ class MA_slate_base extends MA_component {
     width: auto;
     text-align: center;
     border-radius:10px;
-    background-color:#4a546244;
+    background-color:#22222244;
     min-width:30px;
     ">${this.outputcache[3]!==undefined?this.outputcache[3].toFraction():""}</div>
     </div>
@@ -556,13 +557,14 @@ cr_orderofchecks=[
   {x: 0,y:-1,c:"^"}
 ]
 
+//creates the bubble behind signal markers
 function ma_bubble(txt){
   return `
   <div style="width:100%;justify-content: center;display:flex">
   <div style="
   margin-top:35%;
   border-radius:10px;
-  background-color:#4a546244;
+  background-color:#22222244;
   min-width:30px;
   ">${txt}</div>
   </div>
@@ -573,6 +575,18 @@ function ma_bubble(txt){
 {
 ma_puzzledata={
   100: [
+    {
+      imgpos: 9,
+      title: "wire",
+      desc: "send I0 to O0",
+      inputs: [[]],
+      outputs: [[]],
+      randomized_test(){
+        a=ma_r(99)
+        return {i:[[a]],o:[[a]]}
+      },
+      rtests_required: 30
+    },
     {
       imgpos: 1,
       title: "nand",
@@ -754,7 +768,7 @@ addLayer("pt",{
         "pointer-events":"auto",
         "border":"none",
       }:{
-        "background-color":"#4a5462",
+        "background-color":"#222222",
         "pointer-events":"none",
         "transform":"scale(0.9)"
       }
@@ -849,7 +863,7 @@ function ma_checkwin(){
             if (player.ma.error_message&&(id%100-1==player.ma.inputports.length+player.ma.error_port)){
               style["background-color"]="#880000"
             }else{
-              style["background-color"]="#4a5462"
+              style["background-color"]="#222222"
             }
           }
         }
@@ -1036,7 +1050,7 @@ function ma_setcomponent(x,y,type){
         let i=Math.floor(id/100)*5+id%100
         let bpname=player.blueprints.bporder[i]
         let style = {
-          "background-color":bpname?"#ff0000":"#4a5462",
+          "background-color":bpname?"#ff0000":"#222222",
           "border":"none",
         }
         if (player.blueprints.bpdata[bpname]){
@@ -1373,7 +1387,7 @@ addLayer("ma", {
         style.height="40px"
       }
       if(tbside||lrside){
-        style["background-color"]=data.mode==""?"#4a5462":(data.mode=="O"?"#eb7d34":"#3496eb")
+        style["background-color"]=data.mode==""?"#222222":(data.mode=="O"?"#eb7d34":"#3496eb")
       }else{
         if (data.component_type=="responsive cable"){
           let pos=`${-data.wire_sprite*100}% 50%`

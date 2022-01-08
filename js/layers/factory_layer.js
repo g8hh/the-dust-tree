@@ -15,6 +15,8 @@ for (const [rowi,row] of Object.entries(fa_machine_picker)){
 class FA_factory {
   constructor(){
     this.tiles={}
+    this.IO=""
+    this.networks=[]
   }
   create(id,type){
     //console.log(`creating ${type} at ${id}`)
@@ -26,11 +28,40 @@ class FA_factory {
   }
   update_io(){
     let outputstring=""
-    let checkedtiles=[]
+    let networks=[]
+    this.machines=[]
+    for (const [pos,machine] of Object.entries(this.tiles)){machine.network=null}
     for (const [pos,machine] of Object.entries(this.tiles)){
-      if (machine.name!=="empty"){
-        outputstring+=machine.name
+      if(machine.network_target){
+        this.machines.push(machine)
       }
+      if (machine.recursivenetwork && machine.network===null){
+        let network={pipes:[],inputs:[],outputs:[],id:networks.length+1,items:[]}
+        machine.recursivenetwork(network)
+        networks.push(network)
+      }else if(machine.network_target){
+        for (let l=0;l<=3;l++){
+          if (machine.open(l) && !machine.networked_sides[l]){
+            let network=(machine.io_port(l+2)=="push")?
+            {pipes:[],inputs:[machine],outputs:[],id:networks.length+1,items:[]}:
+            {pipes:[],inputs:[],outputs:[machine],id:networks.length+1,items:[]}
+            machine.network_side(network,l)
+            this.neighbor(l).networked_sides[(l+2)%4]=network.id
+            networks.push(network)
+          }
+        }
+      }
+    }
+    this.IO=networks.length
+    this.networks=networks
+    refreshgrid("fa_designer")
+  }
+  tick_sim(){
+    for (let machine of this.machines){
+      
+    }
+    for (let network of this.networks){
+      
     }
   }
 }
@@ -45,6 +76,7 @@ class FA_machine {
   constructor(pos){
     this.pos=pos
     this.IO=["none","none","none","none"]
+    this.networked_sides=[]
   }
   neighbor(side){
     let o=cr_orderofchecks[side]
@@ -52,7 +84,9 @@ class FA_machine {
     return machine
   }
   open(side){
-    return this.neighbor(side).io_port(side)!=="none" && this.IO[side]!=="none"
+    if (this.neighbor(side).io_port) {
+      return this.neighbor(side).io_port(side)!=="none" && this.IO[side]!=="none"
+    }
   }
   io_port(side){
     return this.IO[(side+2)%4]
@@ -65,6 +99,15 @@ class FA_machine {
       }
     }
     return spritepos
+  }
+  network_side(network,l){
+    if (this.neighbor(l).recursivenetwork){
+      if (this.neighbor(l).network===null){
+        this.neighbor(l).recursivenetwork(network)
+      }
+    }
+    if (this.neighbor(l).io_port(l)=="pull")network.outputs.push(this.neighbor(l));this.neighbor(l).networked_sides[(l+2)%4]=network.id
+    if (this.neighbor(l).io_port(l)=="push")network.inputs .push(this.neighbor(l));this.neighbor(l).networked_sides[(l+2)%4]=network.id
   }
 }
 class FA_empty extends FA_machine{
@@ -83,6 +126,10 @@ class FA_crafter extends FA_machine{
     this.sprite="./crafter_E.png"
     this.spritepos=15
     this.symbol="C"
+
+    this.produce="cdst"
+
+    this.network_target=true
   }
   modify_style(style){
     style["background-position"]=`${-this.get_dir_sprite()*100}% 0%`
@@ -90,7 +137,42 @@ class FA_crafter extends FA_machine{
   config(){
     return [
       {v:"IO",t:"io"},
+      {v:"produce",t:"toggle",o:["cdst","brck","shrd"]}
     ]
+  }
+  calc_transformation(){
+    switch (this.produce){
+      case "cdst":
+        return {
+          inputs:[
+            {a:2,r:"dust"},
+          ],
+          outputs:[
+            {a:1,r:"compressed dust"},
+          ],
+          maxtransforms:50
+        }
+      case "brck":
+        return {
+          inputs:[
+            {a:2,r:"compressed dust"},
+          ],
+          outputs:[
+            {a:1,r:"dust bricks"},
+          ],
+          maxtransforms:50
+        }
+      case "shrd":
+        return {
+          inputs:[
+            {a:2,r:"dust bricks"},
+          ],
+          outputs:[
+            {a:1,r:"dust shard"},
+          ],
+          maxtransforms:50
+        }
+    }
   }
 }
 class FA_drill extends FA_machine{
@@ -100,6 +182,7 @@ class FA_drill extends FA_machine{
     this.sprite="./drill_E.png"
     this.spritepos=15
     this.symbol="D"
+    this.network_target=true
   }
   modify_style(style){
     style["background-position"]=`${-this.get_dir_sprite()*100}% 0%`
@@ -108,6 +191,15 @@ class FA_drill extends FA_machine{
     return [
       {v:"IO",t:"io"},
     ]
+  }
+  calc_transformation(){
+    return {
+      inputs:[],
+      outputs:[
+        {a:1,r:"dust"},
+      ],
+      maxtransforms:10
+    }
   }
 }
 class FA_pipe extends FA_machine{
@@ -124,8 +216,20 @@ class FA_pipe extends FA_machine{
   }
   config(){
     return [
+      {v:"network",t:"display-value",ptxt:"<br>network:<br>",dtxt:"none"},
       {v:"IO",t:"block"},
     ]
+  }
+  recursivenetwork(network){
+    network.pipes.push(this)
+    this.network=network.id
+    let dirsseen=0
+    for(let l=0;l<=3;l++){
+      if (this.open(l)){
+        this.network_side(network,l)
+      }
+    }
+    this.dirsseen=dirsseen
   }
 }
 class FA_port extends FA_machine{
@@ -137,6 +241,7 @@ class FA_port extends FA_machine{
     this.symbol="P"+Math.floor(Math.random()*10)
     this.IO=["open","open","open","open"]
     this.mode="push"
+    this.network_target=true
   }
   modify_style(style){
     style["background-position"]=`${-this.get_sprite()*100}% 0%`
@@ -156,13 +261,16 @@ class FA_port extends FA_machine{
     return 4
   }
   get_sprite(){
-    let spr=this.get_rot_sprite()
+    let side=this.getside()
+    let spr=this.get_rot_sprite(side)
     if(spr==16)return spr
     spr+=this.mode=="push"?2:0
+    
+    spr+=this.neighbor(side).io_port(side)=="none"?-1:0
     return spr
   }
-  get_rot_sprite(){
-    switch (this.getside()){
+  get_rot_sprite(side){
+    switch (side){
       case  0: return  1
       case  1: return  5
       case  2: return  9
@@ -171,7 +279,7 @@ class FA_port extends FA_machine{
     }
   }
   io_port(side){
-    return (side+2)%4==this.getside()?"open":"none"
+    return (side+2)%4==this.getside()?this.mode:"none"
   }
 }
 
@@ -213,6 +321,9 @@ function machineconfiglayout(){
       switch(setting.t){
         case "label":
           configlayout.push(["display-text",setting.v])
+          break
+        case "display-value":
+          configlayout.push(["display-text",`${setting.ptxt}${accessvar(v,setting.dtxt)}`])
           break
         case "slider":
           configlayout.push(["bad-slider",[v,setting.l,setting.u,setting.cb],{"pointer-events":"auto"}])
@@ -345,6 +456,26 @@ addLayer("fa",{
             ],
           ],
           ["row",[
+            ["raw-html",function() {
+              let txt=`networks: ${getGridData("fa", player.fa.pos).factory.IO}<br>`
+              for (const network of getGridData("fa",player.fa.pos).factory.networks){
+                txt+=`
+                &nbsp;&nbsp;network ${network.id}:<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;pipes: &nbsp; ${`${network.pipes.length}`.padStart(6, '@').replaceAll("@","&nbsp;")}
+                &nbsp;inputs: &nbsp;${`${network.inputs.length}`.padStart(6, '@').replaceAll("@","&nbsp;")}
+                &nbsp;outputs:      ${`${network.outputs.length}`.padStart(6, '@').replaceAll("@","&nbsp;")}<br>
+                `
+              }
+              return `<div style="
+              text-align:left;
+              ">${txt}</div>` 
+            }],
+          ]],
+          ["row",[
+            ["clickable","update_io"],
+            ["clickable","tick_sim"],
+          ]],
+          ["row",[
             ["layer-proxy",["fa_machines",[
               ["grid",[1,2,3]]
             ]]],
@@ -380,6 +511,20 @@ addLayer("fa_designer",{
           "background-position":player.fa.toolmode=="destroy"?"100% 0%":"0% 0%"
         }
       }
+    },
+    "tick_sim": {
+      canClick: true,
+      onClick(){
+        getGridData("fa",player.fa.pos).factory.tick_sim()
+      },
+      title: "tick sim"
+    },
+    "update_io": {
+      canClick: true,
+      onClick(){
+        getGridData("fa",player.fa.pos).factory.update_io()
+      },
+      title: "update io"
     },
     "destroy_selected":{
       canClick(){
@@ -470,7 +615,9 @@ addLayer("fa_designer",{
 
       }else{
         let machine=getGridData("fa",player.fa.pos).factory.getmachine(id)
-        //return machine.symbol
+        if (machine.network){
+          return `[${machine.network}]`
+        }
       }
     },
     onClick(_,id){
@@ -514,7 +661,7 @@ addLayer("fa_designer",{
 
       refreshneighbors("fa_designer",id)
     },
-    onHold(data,id){this.onClick(data,id)}
+    onHold(data,id){this.onRClick(data,id)}
   },
 })
 

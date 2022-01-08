@@ -43,7 +43,7 @@ cr_data={
     "lively chunkClively chunk":[{a:1,r:"biomass"}],
     "engraved bricksCdust":[{a:1,r:"engraved bricks"},{a:1,r:"lively dust"},{a:1,r:"responsive dust"}],
     "lively dustCresponsive dust":[{a:1,r:"dust"}],
-    "responsive dustCdust shard":[{a:1,r:"responsive cable"}],
+    "responsive dustCdust shard":[{a:5,r:"responsive cable"}],
     "responsive dustCengraved bricks":[{a:1,r:"cross slate"}],
     "responsive dustCcross slate":[{a:1,r:"logic slate"}],
     "engraved bricksCcross slate":[{a:1,r:"togglable slate"}],
@@ -374,11 +374,13 @@ let data={
         }
         style["background-position"]="0% 0%"
         style["background-image"]='url("./blank.png")'
-        if (cr_getitem(id)){
+        if (cr_getobj(id).haveseen){
+          style["background-position"]=`${(id%100+Math.floor(id/100)*9)*-100+1000}% 0%`
+          style["background-image"]='url("./items_E.png")'
           if (cr_getitem(id).gt(0)){
             style["background-color"]=this.getCol(id)
-            style["background-position"]=`${(id%100+Math.floor(id/100)*9)*-100+1000}% 0%`
-            style["background-image"]='url("./items_E.png")'
+          }else{
+            style["background-color"]=LightenDarkenColor(this.getCol(id),-64)
           }
         }
         return style
