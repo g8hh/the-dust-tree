@@ -58,7 +58,11 @@ class FA_factory {
   }
   tick_sim(){
     for (let machine of this.machines){
-      
+      if (machine.calc_transformation){
+        let io=machine.calc_transformation()
+        machine.inputs=io.inputs
+        machine.outputs=io.outputs
+      }
     }
     for (let network of this.networks){
       
