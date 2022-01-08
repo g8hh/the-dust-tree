@@ -203,7 +203,7 @@ class MA_port extends MA_component {
               player.ma.error_port=Infinity
               player.ma.paused=true
               player.ma.solved_puzzles[player.ma.puzzlename]=true
-              player.ma.best_parts[player.ma.puzzlename]
+              //player.ma.best_parts[player.ma.puzzlename]
             }
           }else{
             console.log(exv,v,"fail")
