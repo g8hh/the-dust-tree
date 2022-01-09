@@ -620,24 +620,24 @@ ma_puzzledata={
     {
       imgpos: 3,
       title: "low",
-      desc: "send a stream of -2 to O0, one for each input 0",
+      desc: "send a stream of -2 to O0",
       inputs: [[]],//get pushed to all free wires with a blue io port next to them. (order goes up left right bottom)
       outputs: [[]],//get pulled to fromm all wires with an orange io port next to them. (order goes up left right bottom)
       randomized_test(){
-        return {i:[[0]],o:[[-2]]}
+        return {i:[[]],o:[[-2]]}
       },
-      rtests_required: 50
+      rtests_required: 30
     },
     {
       imgpos: 4,
       title: "high",
-      desc: "send a stream of +2 to O0, one for each input 0",
+      desc: "send a stream of +2 to O0",
       inputs: [[]],//get pushed to all free wires with a blue io port next to them. (order goes up left right bottom)
       outputs: [[]],//get pulled to fromm all wires with an orange io port next to them. (order goes up left right bottom)
       randomized_test(){
-        return {i:[[0]],o:[[2]]}
+        return {i:[[]],o:[[2]]}
       },
-      rtests_required: 50
+      rtests_required: 30
     },
     {
       imgpos: 5,
@@ -649,19 +649,19 @@ ma_puzzledata={
         let v=ma_r(99)
         return {i:[[v]],o:[v>0?[v]:[]]}
       },
-      rtests_required: 50
+      rtests_required: 30
     },
     {
       imgpos: 6,
-      title: "negate negatives",
-      desc: "convert each negative number into zero.",
-      inputs: [[]],
-      outputs: [[]],
+      title: "absolute",
+      desc: "convert each negative number into a positive number, and leave positive numbers alone.",
+      inputs: [[0]],
+      outputs: [[0]],
       randomized_test(){
         let v=ma_r(99)
-        return {i:[[v]],o:[[v<=0?0:v]]}
+        return {i:[[v]],o:[[v<=0?-v:v]]}
       },
-      rtests_required: 50
+      rtests_required: 29
     },
     {
       imgpos: 7,
@@ -677,7 +677,7 @@ ma_puzzledata={
         let b=ma_r(99)
         return {i:[[a],[b]],o:[[a+b]]}
       },
-      rtests_required: 47
+      rtests_required: 30
     },
   ],
   300:[
@@ -698,7 +698,7 @@ ma_puzzledata={
         let c=ma_r(1)
         return {i:[[a],[b],[c],[]],o:[[c>0?b:a]]}
       },
-      rtests_required: 47
+      rtests_required: 30
     }
   ]
 }
