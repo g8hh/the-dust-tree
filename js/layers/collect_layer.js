@@ -1,6 +1,6 @@
 
 addLayer("co",{
-  startdust: new Decimal("2e6"),
+  startdust: new Decimal("2e10"),
   startData(){
     return {
       scroungeable_dust: new Decimal(layers.co.startdust),
@@ -14,6 +14,13 @@ addLayer("co",{
   color: "#b9bffb",
   type: "none",
   row: 0, // Row the layer is in on the tree (0 is the first row)
+  scrounge(amt){
+    amt=new Decimal(amt)
+    amt=amt.min(player.co.scroungeable_dust)
+    player.co.scroungeable_dust = player.co.scroungeable_dust.sub(amt)
+    player.co.lifetime_scrounged = player.co.lifetime_scrounged.add(amt)
+    cr_additem("dust",amt)
+  },
   clickables: {
     11: {
       display() { return `
@@ -24,9 +31,8 @@ addLayer("co",{
       canClick() { return player.co.scroungeable_dust.gt(0) },
       onClick() {
           if (this.canClick()){
-            player.co.scroungeable_dust = player.co.scroungeable_dust.sub(1)
-            player.co.lifetime_scrounged = player.co.lifetime_scrounged.add(1)
-            cr_additem("dust",1)
+            let amt=new Decimal(layers.re.buyables[11].effect())
+            layers.co.scrounge(amt)
           }
       },
       onHold(){this.onClick()},
@@ -35,8 +41,6 @@ addLayer("co",{
       title: "add 999 to all resources",
       canClick(){return true},
       onClick(){
-        player.co.scroungeable_dust = player.co.scroungeable_dust.sub(999)
-        player.co.lifetime_scrounged = player.co.lifetime_scrounged.add(999)
         for (let id in cr_data.resources){
           id=Number(id)
           cr_setitem(id,cr_getitem(id).add(999))
@@ -44,22 +48,33 @@ addLayer("co",{
       }
     },
   },
-  bars: {
-    currentdust: {
-      direction: UP,
-      width:"600",
-      height:"900",
-      progress(){
-        return player.co.scroungeable_dust.div(layers.co.startdust)
-      },
-      unlocked(){
-        return player.co.lifetime_scrounged.gte(10000)
-      }
-    }
-  },
   tabFormat: [
+    ["display-text","(hint: you can hold to rapidly collect dust)"],
     "clickables",
-    ["bar","currentdust"]
+    ["raw-html",function() {
+      let height=1000
+      let width=200
+      return `
+      <div style="
+      background-color:#b9bffb;
+      height:${height}px;
+      width:${width}px;
+      overflow:hidden;
+      border-radius:10px;
+      border-width:10px;
+      border:solid;
+      ">
+      <div style="
+      background-color:#222222;
+      height:${
+        (new Decimal(1).sub(player.co.scroungeable_dust.div(layers.co.startdust))).mul(height)
+      }px;
+      width:${width}px
+      ">
+      </div>
+      </div>
+      `
+    }]
   ],
   tooltip(){return "dust collection"+(player.co.lifetime_scrounged.gte(1000)?" overview":"")}
 })

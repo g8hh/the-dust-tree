@@ -32,40 +32,57 @@ addLayer("re",{
       &lt;USE 30 DUST><br>
       &lt;>
       </div>`,
+      pay(){cr_subitem("dust",30)},
       style: re_researchstyle,
     },
     21: {
-      canAfford(){return cr_getitem("logic slate").gte(4)},
+      canAfford(){return cr_hasitem("logic slate",4) && cr_hasitem("responsive cable",10) && Object.keys(player.ma.solved_puzzles).length>=4},
       fullDisplay:`devise simulator for logic systems
       <div style="text-align: right">
       &lt;REQ 4 LOGIC SLATE><br>
       &lt;USE 10 RESPONSIVE CABLE><br>
       &lt;>
       </div>`,
+      pay(){cr_subitem("responsive cable",10)},
       style: re_researchstyle,
     },
     31: {
-      canAfford(){return cr_getitem("dust shard").gte(30)},
+      canAfford(){return cr_hasitem("dust shard",30) && cr_hasitem("lively dust",10)},
       fullDisplay:`devise constuction drone
       <div style="text-align: right">
       &lt;REQ 4 FUNCTIONAL DESIGNS><br>
-      &lt;REQ 30 DUST SHARDS><br>
-      &lt;>
+      &lt;USE 30 DUST SHARDS><br>
+      &lt;USE 10 LIVELY DUST>
       </div>`,
+      pay(){cr_subitem("dust shards",30);cr_subitem("lively dust",10)},
       style: re_researchstyle,
     },
   },
   buyables: {
-    _11: {
+    11: {
+      costs:[
+        {i:"dust",a:40},
+        {i:"compressed dust",a:40},
+        {i:"dust bricks",a:40}
+      ],
       cost(x){
-        return 4**x
+        return this.costs[x]||{i:"unknown",a:Infinity}
       },
-      display() { return `ENHANCE\nCURRENT: ${getBuyableAmount(this.layer, this.id)}\n&lt;REQ ${this.cost()} DUST>` },
-      canAfford() { return cr_getitem("dust").gte(this.cost()) },
+      display() {
+        let amt=getBuyableAmount(this.layer, this.id)
+        return `ENHANCE GATHERING
+        CURRENT: ${amt}
+        &lt;USE ${`${this.cost().a}`.toUpperCase()} ${this.cost().i.toUpperCase()}>
+        EFFECT: x${this.effect()}`
+      },
+      canAfford() { return cr_getitem(this.cost().i).gte(this.cost().a) },
       buy() {
-          cr_setitem("dust",cr_getitem("dust").sub(this.cost()))
+          cr_setitem(this.cost().i,cr_getitem(this.cost().i).sub(this.cost().a))
           setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(1))
       },
+      effect(x){
+        return 2**(x||getBuyableAmount(this.layer, this.id))
+      }
       
     }
   },

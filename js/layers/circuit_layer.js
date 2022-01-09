@@ -1480,6 +1480,9 @@ addLayer("ma", {
     },
     puzzles: {
       content:[
+        ["display-text",function() {
+          return `you have solved ${Object.keys(player.ma.solved_puzzles).length} puzzles so far`
+        }],
         ["column",[
           ["raw-html",function(){
             return `

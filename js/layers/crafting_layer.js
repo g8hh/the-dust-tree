@@ -44,9 +44,9 @@ cr_data={
     "engraved bricksCdust":[{a:1,r:"engraved bricks"},{a:1,r:"lively dust"},{a:1,r:"responsive dust"}],
     "lively dustCresponsive dust":[{a:1,r:"dust"}],
     "responsive dustCdust shard":[{a:5,r:"responsive cable"}],
-    "responsive dustCengraved bricks":[{a:1,r:"cross slate"}],
+    "responsive cableCengraved bricks":[{a:1,r:"cross slate"}],
     "responsive dustCcross slate":[{a:1,r:"logic slate"}],
-    "engraved bricksCcross slate":[{a:1,r:"togglable slate"}],
+    "lively dustCcross slate":[{a:1,r:"togglable slate"}],
     "engraved bricksCdust shard":[{a:1,r:"memory chip"}],
     "memory chipClively dust":[{a:1,r:"recipe chip"}],
     "memory chipCdust":[{a:1,r:"blueprint chip"}],
@@ -220,7 +220,7 @@ let data={
         onClick() {
           if (player.cr.selected){
             setClickableState(this.layer,this.id,player.cr.selected)
-            player.cr.selected=""
+            //player.cr.selected=""
           }
         },
         display() {return getClickableState(this.layer,this.id)},
@@ -231,7 +231,7 @@ let data={
         onClick() {
           if (player.cr.selected){
             setClickableState(this.layer,this.id,player.cr.selected)
-            player.cr.selected=""
+            //player.cr.selected=""
           }
         },
         display() {return getClickableState(this.layer,this.id)},
@@ -354,33 +354,38 @@ let data={
           return true
       },
       getCol(id){
-        if (cr_getitem(id).gt(0)){
-          if (cr_data.resources[id]){
-            let col=cr_data.resources[id].c
-            let is_selected=player.cr.selected==cr_data.resources[id].name
-            return (is_selected?LightenDarkenColor(col,64):col)
-          }
+        if (cr_data.resources[id]){
+          return cr_data.resources[id].c
         }
         return "#222222"
       },
       getStyle(data, id) {
         let col="#000000"
         let is_selected=false
-        if (cr_data.resources[id]){}
+        if (cr_data.resources[id]){
+          is_selected=player.cr.selected==cr_data.resources[id].name
+        }
         let style={
           "background-color": "#222222",
           "background-size": "auto 100%",
-          "padding-bottom": "40%"
+          "padding-bottom": "40%",
+          "border-width":"0px"
         }
         style["background-position"]="0% 0%"
         style["background-image"]='url("./blank.png")'
         if (cr_getobj(id).haveseen){
           style["background-position"]=`${(id%100+Math.floor(id/100)*9)*-100+1000}% 0%`
           style["background-image"]='url("./items_E.png")'
-          if (cr_getitem(id).gt(0)){
-            style["background-color"]=this.getCol(id)
+          style["background-color"]=this.getCol(id)
+          if (is_selected){
+            style["transform"]="scale(1.1) translate(0,-10px)"
+            style["z-index"]="6"
+            style["border-color"]="#fffc40"
+          }else if (cr_getitem(id).lte(0)){
+            style["border-color"]="#b4202a"
           }else{
-            style["background-color"]=LightenDarkenColor(this.getCol(id),-64)
+            style["border-color"]="transparent"
+
           }
         }
         return style

@@ -12,6 +12,26 @@ for (const [rowi,row] of Object.entries(fa_machine_picker)){
   }
 }
 
+class FA_network {
+  constructor(id){
+    this.pipes=[]
+    this.inputs=[]
+    this.outputs=[]
+    this.items=[]
+    this.id=id
+  }
+  getitem(id){
+    return this.items[id]??=0
+  }
+  setitem(id,amount){
+    this.items[id]=amount
+  }
+  additem(id,amount){
+    this.items[id]??=0
+    this.items[id]+=amount
+  }
+}
+
 class FA_factory {
   constructor(){
     this.tiles={}
@@ -36,17 +56,16 @@ class FA_factory {
         this.machines.push(machine)
       }
       if (machine.recursivenetwork && machine.network===null){
-        let network={pipes:[],inputs:[],outputs:[],id:networks.length+1,items:[]}
+        let network=new FA_network(networks.length+1)
         machine.recursivenetwork(network)
         networks.push(network)
       }else if(machine.network_target){
         for (let l=0;l<=3;l++){
           if (machine.open(l) && !machine.networked_sides[l]){
-            let network=(machine.io_port(l+2)=="push")?
-            {pipes:[],inputs:[machine],outputs:[],id:networks.length+1,items:[]}:
-            {pipes:[],inputs:[],outputs:[machine],id:networks.length+1,items:[]}
+            let network=new FA_network(networks.length+1)
+            if (machine.io_port(l+2)=="push"){network.inputs.push(machine)}else{network.outputs.push(machine)}
             machine.network_side(network,l)
-            this.neighbor(l).networked_sides[(l+2)%4]=network.id
+            machine.neighbor(l).networked_sides[(l+2)%4]=network.id
             networks.push(network)
           }
         }
@@ -54,18 +73,47 @@ class FA_factory {
     }
     this.IO=networks.length
     this.networks=networks
+    this.tick_sim()
     refreshgrid("fa_designer")
   }
   tick_sim(){
     for (let machine of this.machines){
+      machine.requests=[]
+      let recievable=[]
+      for(let [item,amount] of Object.entries(machine.recievablefromnetwork)){
+        recievable[item]??=new Decimal(0)
+        recievable[item]+=amount
+      }
       if (machine.calc_transformation){
         let io=machine.calc_transformation()
-        machine.inputs=io.inputs
-        machine.outputs=io.outputs
+        let transforms=new Decimal(io.maxtransforms)
+        for (let input of io.inputs){
+          recievable[input.r]??=new Decimal(0)
+          transforms=transforms.min(recievable[input.r].div(input.a))
+        }
+        machine.sends=[]
+        for (let output of io.outputs){
+          machine.sends[output.r],transforms*output.a
+        }
+
+        for (let input of io.inputs){
+          console.log(input.r)
+          machine.requests.push(input.r)
+          console.log(machine.requests)
+        }
       }
+      machine.recievablefromnetwork=[]
     }
     for (let network of this.networks){
-      
+      network.requests=[]
+      for(let output of network.outputs){
+        console.log(output.requests)
+        for(let request of output.requests){
+          console.log(request)
+          network.requests[request]??=[]
+          network.requests[request].push(output)
+        }
+      }
     }
   }
 }
@@ -81,6 +129,7 @@ class FA_machine {
     this.pos=pos
     this.IO=["none","none","none","none"]
     this.networked_sides=[]
+    this.recievablefromnetwork=[]
   }
   neighbor(side){
     let o=cr_orderofchecks[side]
@@ -141,7 +190,7 @@ class FA_crafter extends FA_machine{
   config(){
     return [
       {v:"IO",t:"io"},
-      {v:"produce",t:"toggle",o:["cdst","brck","shrd"]}
+      {v:"produce",t:"toggle",o:["cdst","brck","shrd","sive","comb"]}
     ]
   }
   calc_transformation(){
@@ -175,6 +224,28 @@ class FA_crafter extends FA_machine{
             {a:1,r:"dust shard"},
           ],
           maxtransforms:50
+        }
+      case "sive":
+        return {
+          inputs:[
+            {a:1,r:"dust"},
+            {a:1,r:"engraved bricks"},
+          ],
+          outputs:[
+            {a:1,r:"responsive dust"},
+            {a:1,r:"lively dust"},
+            {a:1,r:"engraved bricks"}
+          ]
+        }
+      case "comb":
+        return {
+          inputs:[
+            {a:1,r:"responsive dust"},
+            {a:1,r:"lively dust"},
+          ],
+          outputs:[
+            {a:1,r:"dust"},
+          ]
         }
     }
   }
@@ -463,11 +534,16 @@ addLayer("fa",{
             ["raw-html",function() {
               let txt=`networks: ${getGridData("fa", player.fa.pos).factory.IO}<br>`
               for (const network of getGridData("fa",player.fa.pos).factory.networks){
+                let requests=""
+                for (let [item,requesters] of Object.entries(network.requests)){
+                  requests+=`&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${item}: ${requesters.length}<br>`
+                }
                 txt+=`
                 &nbsp;&nbsp;network ${network.id}:<br>
                 &nbsp;&nbsp;&nbsp;&nbsp;pipes: &nbsp; ${`${network.pipes.length}`.padStart(6, '@').replaceAll("@","&nbsp;")}
                 &nbsp;inputs: &nbsp;${`${network.inputs.length}`.padStart(6, '@').replaceAll("@","&nbsp;")}
                 &nbsp;outputs:      ${`${network.outputs.length}`.padStart(6, '@').replaceAll("@","&nbsp;")}<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;requests:<br>${requests}
                 `
               }
               return `<div style="
@@ -665,7 +741,6 @@ addLayer("fa_designer",{
 
       refreshneighbors("fa_designer",id)
     },
-    onHold(data,id){this.onRClick(data,id)}
   },
 })
 
