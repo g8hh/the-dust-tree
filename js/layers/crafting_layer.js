@@ -374,7 +374,6 @@ let data={
         style["background-position"]="0% 0%"
         style["background-image"]='url("./blank.png")'
         if (cr_getobj(id).haveseen){
-          style["background-image"]='url("./items_E.png")'
           style["background-color"]=this.getCol(id)
           if (is_selected){
             style["background-color"]=LightenDarkenColor(this.getCol(id),64)
@@ -411,6 +410,17 @@ let data={
           bottom: 0%;
           ${cr_getitem(id).lte(0)?"transform: rotatey(180deg);":""}
           ">
+          <div style="
+          -webkit-backface-visibility: hidden; /* Safari */
+          backface-visibility: hidden;
+          position:absolute;
+          left: 0%;
+          right: 0%;
+          top: 0%;
+          bottom: 0%;
+          background-image:'url("./items_E.png")'
+          ">
+          </div>
           <div style="
           -webkit-backface-visibility: hidden; /* Safari */
           backface-visibility: hidden;
