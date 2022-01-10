@@ -44,6 +44,14 @@ addLayer("co",{
           }
       },
       onHold(){this.onClick()},
+      style(){
+        return {
+          "border-radius":"0px",
+          "border":"none",
+          "background-image":'url("./collect_E.png")',
+          "background-size":`auto ${200/getBuyableAmount("re","extraction").add(1).toNumber()}%`
+        }
+      }
     },
     44: {
       title: "add 999 to all resources",

@@ -369,12 +369,12 @@ let data={
           "background-color": "#222222",
           "background-size": "auto 100%",
           "padding-bottom": "40%",
-          "border-width":"0px"
+          "border-width":"0px",
+          "transform-style": "preserve-3d",
         }
         style["background-position"]="0% 0%"
         style["background-image"]='url("./blank.png")'
         if (cr_getobj(id).haveseen){
-          style["background-image"]='url("./items_E.png")'
           style["background-color"]=this.getCol(id)
           if (is_selected){
             style["background-color"]=LightenDarkenColor(this.getCol(id),64)
