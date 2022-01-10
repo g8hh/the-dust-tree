@@ -374,14 +374,17 @@ let data={
         style["background-position"]="0% 0%"
         style["background-image"]='url("./blank.png")'
         if (cr_getobj(id).haveseen){
+          style["background-image"]='url("./items_E.png")'
           style["background-color"]=this.getCol(id)
           if (is_selected){
             style["background-color"]=LightenDarkenColor(this.getCol(id),64)
             style["transform"]="scale(1.1)"
             style["z-index"]="6"
+            style["background-size"]= `auto 100%`
           }if (cr_getitem(id).lte(0)){
             style["transform"]="rotatey(180deg)"
           }
+          style["background-position"]=`${(id%100+Math.floor(id/100)*9-10)*-100}% 0%`
         }
         return style
       },
@@ -408,19 +411,6 @@ let data={
           bottom: 0%;
           ${cr_getitem(id).lte(0)?"transform: rotatey(180deg);":""}
           ">
-          <div style="
-          -webkit-backface-visibility: hidden; /* Safari */
-          backface-visibility: hidden;
-          position:absolute;
-          left: 0%;
-          right: 0%;
-          top: 0%;
-          bottom: 0%;
-          background-size:cover;
-          background-image:'url("./items_E.png")';
-          background-position:${(id%100+Math.floor(id/100)*9-10)*-100}% 0%;
-          ">
-          </div>
           <div style="
           -webkit-backface-visibility: hidden; /* Safari */
           backface-visibility: hidden;
