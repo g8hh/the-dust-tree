@@ -409,23 +409,43 @@ let data={
           right: 0%;
           top: 0%;
           bottom: 0%;
-          ${cr_getitem(id).lte(0)?"transform: rotatey(180deg);":""}
           ">
+          
+          <!--zero items image-->
           <div style="
+          transform:rotatey(180deg) rotate(45deg);
           -webkit-backface-visibility: hidden; /* Safari */
           backface-visibility: hidden;
-          position: absolute;
-          left: 5%;
-          top:  5%;
-          text-align: left;
-          border-radius: 0% 0% 4px 4px;
-          font-size: 50%;
-          color: ${cr_getitem(id).gt(0)?"white":"black"};
-          padding-left: 10px;
-          padding-right: 10px;
-          background-color: #22222244;
-          transform-style: preserve-3d;
-          "><div style="transform:rotate(180deg)">${cr_getitem(id).gt(0)?"":"empty"}</div></div>
+          box-sizing: border-box;
+          -moz-box-sizing: border-box;
+          -webkit-box-sizing: border-box;
+          position:absolute;
+          left: 12.5%;
+          right: 12.5%;
+          top: 12.5%;
+          bottom: 12.5%;
+          background-image:url(./items_E.png);
+          background-size:auto 100%;
+          background-position: ${(id%100+Math.floor(id/100)*9-10)*-100}% 0%
+          "></div>
+          <!--gt zero items image-->
+          <div style="
+          transform:rotatey(0deg);
+          -webkit-backface-visibility: hidden; /* Safari */
+          backface-visibility: hidden;
+          box-sizing: border-box;
+          -moz-box-sizing: border-box;
+          -webkit-box-sizing: border-box;
+          position:absolute;
+          left: 0%;
+          right: 0%;
+          top: 0%;
+          bottom: 0%;
+          background-image:url(./items_E.png);
+          background-size:auto 100%;
+          background-position: ${(id%100+Math.floor(id/100)*9-10)*-100}% 0%
+          "></div>
+
           <div style="
           -webkit-backface-visibility: hidden; /* Safari */
           backface-visibility: hidden;
@@ -456,7 +476,7 @@ let data={
           right:    5%;
           bottom:   0%;
           height: 17px;
-          ">${cr_getitem(id).gt(0)?cr_getitem(id):""}</div>
+          ">${cr_getitem(id)}</div>
           </div>
           `
           return title
