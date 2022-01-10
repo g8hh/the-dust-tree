@@ -68,6 +68,13 @@ addLayer("re",{
       pay(){cr_subitem("dust",2000)},
       style: re_researchstyle,
     },
+    blank: {
+      canClick: false,
+      onClick(){},
+      style:{
+        opacity: 0,
+      }
+    }
   },
   buyables: {
     11: {
@@ -98,11 +105,14 @@ addLayer("re",{
     }
   },
   tabFormat: [
+    ["display-text","devise new systems to allow for advanced collection and usage."],
     "buyables",
+    "upgrades",
     ["upgrade-tree",[
-      ["crafting_unlock"],
-      ["circuit_unlock"],
-      ["builder_unlock"]
+      ["crafting_unlock","dusthotkey"],
+      ["circuit_unlock","blank"],
+      ["builder_unlock","blank"],
+      
     ]]
   ],
   layerShown(){return player.co.lifetime_scrounged.gte(50)},
