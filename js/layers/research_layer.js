@@ -51,10 +51,10 @@ addLayer("re",{
       style: re_researchstyle,
     },
     builder_unlock: {
-      canAfford(){return cr_hasitem("dust shard",30) && cr_hasitem("lively dust",10) && Object.keys(player.ma.solved_puzzles).length>=4},
+      canAfford(){return cr_hasitem("dust shard",30) && cr_hasitem("lively dust",10) && Object.keys(player.ma.solved_puzzles).length>=6},
       fullDisplay:`devise constuction drone
       <div style="text-align: right">
-      &lt;REQ 4 FUNCTIONAL DESIGNS><br>
+      &lt;REQ 6 FUNCTIONAL DESIGNS><br>
       &lt;USE 30 DUST SHARDS><br>
       &lt;USE 10 LIVELY DUST>
       </div>`,
@@ -62,14 +62,14 @@ addLayer("re",{
       style: re_researchstyle,
     },
     dusthotkey: {
-      canAfford(){return cr_hasitem("dust",2000) && Object.keys(player.ma.solved_puzzles).length>=6},
-      fullDisplay:`devise non-local manual dust collection.
+      canAfford(){return cr_hasitem("dust",200) && cr_hasitem("engraved bricks",30)},
+      fullDisplay:`devise hotkey for dust collection
       <div style="text-align: right">
-      &lt;USE 2000 DUST><br>
-      &lt;REQ 6 FUNCTIONAL DESIGNS><br>
+      &lt;USE 200 DUST><br>
+      &lt;USE 30 ENGRAVED BRICKS><br>
       &lt;>
       </div>`,
-      pay(){cr_subitem("dust",2000)},
+      pay(){cr_subitem("dust",200);cr_subitem("engraved bricks",30)},
       style: re_researchstyle,
     },
     blank: {
@@ -101,7 +101,7 @@ addLayer("re",{
           setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(1))
       },
       effect(x){
-        return 2**(x||getBuyableAmount(this.layer, this.id))
+        return (x||getBuyableAmount(this.layer, this.id))**3
       },
       style:re_researchstyle,
       
@@ -109,13 +109,13 @@ addLayer("re",{
   },
   tabFormat: [
     ["display-text","devise new systems to allow for advanced collection and usage."],
-    "buyables",
-    "upgrades",
-    ["upgrade-tree",[
-      ["crafting_unlock","dusthotkey"],
-      ["circuit_unlock","blank"],
-      ["builder_unlock","blank"],
-      
+    ["row",[
+      "buyables",
+      ["upgrade-tree",[
+        ["crafting_unlock","dusthotkey"],
+        ["circuit_unlock" ,"blank"     ],
+        ["builder_unlock" ,"blank"     ],
+      ]]
     ]]
   ],
   layerShown(){return player.co.lifetime_scrounged.gte(50)},
