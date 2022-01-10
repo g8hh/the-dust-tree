@@ -379,7 +379,6 @@ let data={
             style["background-color"]=LightenDarkenColor(this.getCol(id),64)
             style["transform"]="scale(1.1)"
             style["z-index"]="6"
-            style["background-size"]= `auto 100%`
           }if (cr_getitem(id).lte(0)){
             style["transform"]="rotatey(180deg)"
           }
@@ -417,8 +416,9 @@ let data={
           right: 0%;
           top: 0%;
           bottom: 0%;
-          background-image:'url("./items_E.png")'
-          background-position:${(id%100+Math.floor(id/100)*9-10)*-100}% 0%
+          background-size:cover;
+          background-image:'url("./items_E.png")';
+          background-position:${(id%100+Math.floor(id/100)*9-10)*-100}% 0%;
           ">
           </div>
           <div style="
