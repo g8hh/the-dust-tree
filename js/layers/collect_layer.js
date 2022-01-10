@@ -39,7 +39,7 @@ addLayer("co",{
       canClick() { return player.co.scroungeable_dust.gt(0) },
       onClick() {
           if (this.canClick()){
-            let amt=new Decimal(layers.re.buyables[11].effect())
+            let amt=new Decimal(layers.re.buyables.extraction_efficiency.effect())
             layers.co.scrounge(amt)
           }
       },

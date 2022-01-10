@@ -78,7 +78,7 @@ addLayer("re",{
     }
   },
   buyables: {
-    11: {
+    extraction_efficiency: {
       costs:[
         {i:"dust",a:40},
         {i:"compressed dust",a:40},
@@ -109,7 +109,9 @@ addLayer("re",{
   tabFormat: [
     ["display-text","devise new systems to allow for advanced collection and usage."],
     ["row",[
-      "buyables",
+      ["buyable",11],
+    ]],
+    ["row",[
       ["upgrade-tree",[
         ["crafting_unlock","dusthotkey"],
         ["circuit_unlock" ,"blank"     ],
