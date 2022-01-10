@@ -108,9 +108,7 @@ addLayer("re",{
   },
   tabFormat: [
     ["display-text","devise new systems to allow for advanced collection and usage."],
-    ["row",[
-      ["buyable",11],
-    ]],
+    ["buyable",11],
     ["row",[
       ["upgrade-tree",[
         ["crafting_unlock","dusthotkey"],
