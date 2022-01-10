@@ -73,8 +73,7 @@ addLayer("re",{
       style: re_researchstyle,
     },
     blank: {
-      canClick: false,
-      onClick(){},
+      canAfford: false,
       style: re_researchstyle_blank
     }
   },
