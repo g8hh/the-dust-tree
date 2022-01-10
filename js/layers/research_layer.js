@@ -78,7 +78,7 @@ addLayer("re",{
     }
   },
   buyables: {
-    extraction_efficiency: {
+    extraction: {
       costs:[
         {i:"dust",a:40},
         {i:"compressed dust",a:40},
@@ -100,7 +100,7 @@ addLayer("re",{
           setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(1))
       },
       effect(x){
-        return (x||getBuyableAmount(this.layer, this.id))**3
+        return ((x||getBuyableAmount(this.layer, this.id))+1)**3
       },
       style:re_researchstyle,
       
