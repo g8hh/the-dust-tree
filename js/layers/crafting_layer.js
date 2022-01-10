@@ -374,19 +374,17 @@ let data={
         style["background-position"]="0% 0%"
         style["background-image"]='url("./blank.png")'
         if (cr_getobj(id).haveseen){
-          style["background-position"]=`${(id%100+Math.floor(id/100)*9)*-100+1000}% 0%`
           style["background-image"]='url("./items_E.png")'
           style["background-color"]=this.getCol(id)
           if (is_selected){
-            style["transform"]="scale(1.1) translate(0,-10px)"
+            style["background-color"]=LightenDarkenColor(this.getCol(id),64)
+            style["transform"]="scale(1.1)"
             style["z-index"]="6"
-            style["border-color"]="#fffc40"
-          }else if (cr_getitem(id).lte(0)){
-            style["border-color"]="#b4202a"
-          }else{
-            style["border-color"]="transparent"
-
+            style["background-size"]= `auto 100%`
+          }if (cr_getitem(id).lte(0)){
+            style["transform"]="rotatey(180deg)"
           }
+          style["background-position"]=`${(id%100+Math.floor(id/100)*9-10)*-100}% 0%`
         }
         return style
       },
@@ -403,7 +401,19 @@ let data={
               top_title=cr_data.resources[id].name
             }
           }
-          title+=`<div style="
+          title+=`
+          <div style="
+          transform-style: preserve-3d;
+          position:absolute;
+          left: 0%;
+          right: 0%;
+          top: 0%;
+          bottom: 0%;
+          ${cr_getitem(id).lte(0)?"transform: rotatey(180deg);":""}
+          ">
+          <div style="
+          -webkit-backface-visibility: hidden; /* Safari */
+          backface-visibility: hidden;
           position: absolute;
           left: 5%;
           top:  5%;
@@ -414,10 +424,27 @@ let data={
           padding-left: 10px;
           padding-right: 10px;
           background-color: #22222244;
-          ">${top_title}</div>` 
-
-          title+=`<div 
+          transform-style: preserve-3d;
+          "><div style="transform:rotate(180deg)">${cr_getitem(id).gt(0)?"":"empty"}</div></div>
+          <div style="
+          -webkit-backface-visibility: hidden; /* Safari */
+          backface-visibility: hidden;
+          position: absolute;
+          left: 5%;
+          top:  5%;
+          text-align: left;
+          border-radius: 0% 0% 4px 4px;
+          font-size: 50%;
+          color: ${cr_getitem(id).gt(0)?"white":"black"};
+          padding-left: 10px;
+          padding-right: 10px;
+          background-color: #22222244;
+          ">${top_title}</div>
+          <div 
           style="
+          transform:rotatey(0deg);
+          -webkit-backface-visibility: hidden; /* Safari */
+          backface-visibility: hidden;
           color: ${cr_getitem(id).gt(0)?"white":"black"};
           border-radius: 4px 4px 0% 0%;
           padding-left: 10px;
@@ -427,8 +454,11 @@ let data={
           font-size: 100%;
           position: absolute;
           right:    5%;
-          bottom:   5%;
-          ">${cr_getitem(id)}</div>`
+          bottom:   0%;
+          height: 17px;
+          ">${cr_getitem(id).gt(0)?cr_getitem(id):""}</div>
+          </div>
+          `
           return title
       },
       getTooltip(data,id){
