@@ -470,7 +470,7 @@ let data={
         return "none"
       }
     },
-    layerShown(){return player.re.upgrades.includes(11)},
+    layerShown(){return hasUpgrade("re","crafting_unlock")||"ghost"},
     tooltip(){return "manual crafting"}
 }
 

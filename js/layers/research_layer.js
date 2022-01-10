@@ -24,7 +24,7 @@ addLayer("re",{
   type: "none",
   color: "#ffd541",
   upgrades: {
-    11: {
+    crafting_unlock: {
       canAfford(){return cr_getitem("dust").gte(100)},
       fullDisplay:`devise manual crafting aparatus
       <div style="text-align: right">
@@ -35,7 +35,7 @@ addLayer("re",{
       pay(){cr_subitem("dust",30)},
       style: re_researchstyle,
     },
-    21: {
+    circuit_unlock: {
       canAfford(){return cr_hasitem("logic slate",4) && cr_hasitem("responsive cable",10)},
       fullDisplay:`devise simulator for logic systems
       <div style="text-align: right">
@@ -46,7 +46,7 @@ addLayer("re",{
       pay(){cr_subitem("responsive cable",10)},
       style: re_researchstyle,
     },
-    31: {
+    builder_unlock: {
       canAfford(){return cr_hasitem("dust shard",30) && cr_hasitem("lively dust",10) && Object.keys(player.ma.solved_puzzles).length>=4},
       fullDisplay:`devise constuction drone
       <div style="text-align: right">
@@ -97,6 +97,11 @@ addLayer("re",{
       
     }
   },
+  tabFormat: [
+    ["upgrade-tree",[
+      ["unlock_crafting"]
+    ]]
+  ],
   layerShown(){return player.co.lifetime_scrounged.gte(50)},
   tooltip(){return "devise new systems"}
 })

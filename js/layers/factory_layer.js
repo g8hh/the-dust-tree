@@ -564,7 +564,7 @@ addLayer("fa",{
       ]
     }
   },
-  layerShown(){return player.re.upgrades.includes(31)||"ghost"},
+  layerShown(){return hasUpgrade("re","builder_unlock")||"ghost"},
   tooltip(){return "expand the factory"}
 })
 

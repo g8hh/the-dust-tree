@@ -1584,6 +1584,6 @@ addLayer("ma", {
       }
     }
   },
-  layerShown(){return player.re.upgrades.includes(21)||"ghost"},
+  layerShown(){return hasUpgrade("re","circuit_unlock")||"ghost"},
   tooltip(){return "machine design"}
 })
