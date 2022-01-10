@@ -98,8 +98,11 @@ addLayer("re",{
     }
   },
   tabFormat: [
+    "buyables",
     ["upgrade-tree",[
-      ["unlock_crafting"]
+      ["crafting_unlock"],
+      ["circuit_unlock"],
+      ["builder_unlock"]
     ]]
   ],
   layerShown(){return player.co.lifetime_scrounged.gte(50)},
