@@ -18,7 +18,7 @@ addNode("blank", {
 }, 
 )
 addNode("blank-co-cr", {
-  layerShown(){return player.re.upgrades.includes(11)?"ghost":false},
+  layerShown(){return hasUpgrade("re","crafting_unlock")?"ghost":false},
 }, 
 )
 
