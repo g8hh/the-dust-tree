@@ -383,7 +383,6 @@ let data={
           }if (cr_getitem(id).lte(0)){
             style["transform"]="rotatey(180deg)"
           }
-          style["background-position"]=`${(id%100+Math.floor(id/100)*9-10)*-100}% 0%`
         }
         return style
       },
@@ -419,6 +418,7 @@ let data={
           top: 0%;
           bottom: 0%;
           background-image:'url("./items_E.png")'
+          background-position:${(id%100+Math.floor(id/100)*9-10)*-100}% 0%
           ">
           </div>
           <div style="
