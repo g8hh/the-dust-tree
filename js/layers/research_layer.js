@@ -6,6 +6,10 @@ re_researchstyle={
   "text-align":"left",
   "border-radius":"1px"
 }
+
+re_researchstyle_blank={...re_researchstyle}
+re_researchstyle_blank.opacity="0"
+
 addLayer("re",{
   name: "research hub",
   symbol: "RE",
@@ -71,9 +75,7 @@ addLayer("re",{
     blank: {
       canClick: false,
       onClick(){},
-      style:{
-        opacity: 0,
-      }
+      style: re_researchstyle_blank
     }
   },
   buyables: {
@@ -100,7 +102,8 @@ addLayer("re",{
       },
       effect(x){
         return 2**(x||getBuyableAmount(this.layer, this.id))
-      }
+      },
+      style:re_researchstyle,
       
     }
   },
