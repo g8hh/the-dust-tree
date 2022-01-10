@@ -36,7 +36,7 @@ addLayer("re",{
       style: re_researchstyle,
     },
     21: {
-      canAfford(){return cr_hasitem("logic slate",4) && cr_hasitem("responsive cable",10) && Object.keys(player.ma.solved_puzzles).length>=4},
+      canAfford(){return cr_hasitem("logic slate",4) && cr_hasitem("responsive cable",10)},
       fullDisplay:`devise simulator for logic systems
       <div style="text-align: right">
       &lt;REQ 4 LOGIC SLATE><br>
@@ -47,7 +47,7 @@ addLayer("re",{
       style: re_researchstyle,
     },
     31: {
-      canAfford(){return cr_hasitem("dust shard",30) && cr_hasitem("lively dust",10)},
+      canAfford(){return cr_hasitem("dust shard",30) && cr_hasitem("lively dust",10) && Object.keys(player.ma.solved_puzzles).length>=4},
       fullDisplay:`devise constuction drone
       <div style="text-align: right">
       &lt;REQ 4 FUNCTIONAL DESIGNS><br>
@@ -55,6 +55,17 @@ addLayer("re",{
       &lt;USE 10 LIVELY DUST>
       </div>`,
       pay(){cr_subitem("dust shards",30);cr_subitem("lively dust",10)},
+      style: re_researchstyle,
+    },
+    dusthotkey: {
+      canAfford(){return cr_hasitem("dust",2000) && Object.keys(player.ma.solved_puzzles).length>=6},
+      fullDisplay:`devise non-local manual dust collection.
+      <div style="text-align: right">
+      &lt;USE 2000 DUST><br>
+      &lt;REQ 6 FUNCTIONAL DESIGNS><br>
+      &lt;>
+      </div>`,
+      pay(){cr_subitem("dust",2000)},
       style: re_researchstyle,
     },
   },

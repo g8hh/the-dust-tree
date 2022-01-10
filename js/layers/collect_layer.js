@@ -21,6 +21,14 @@ addLayer("co",{
     player.co.lifetime_scrounged = player.co.lifetime_scrounged.add(amt)
     cr_additem("dust",amt)
   },
+  hotkeys: [
+    {
+      key: "d", // What the hotkey button is. Use uppercase if it's combined with shift, or "ctrl+x" for holding down ctrl.
+      description: "d: gather dust", // The description of the hotkey that is displayed in the game's How To Play tab
+      onPress() { if (layers.co.clickables[11].canClick()){layers.co.clickables[11].onClick()}},
+      unlocked() {return hasupgrade("re",41)} // Determines if you can use the hotkey, optional
+    }
+  ],
   clickables: {
     11: {
       display() { return `
