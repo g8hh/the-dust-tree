@@ -349,9 +349,10 @@ function loadVue() {
 		data() { return { interval: false, time: 0,}},
 		methods: {
 			start() {
-				if (!this.interval && layers[this.layer].clickables[this.data].onHold) {
+        let c = layers[this.layer].clickables[this.data]
+        if(c.onHoldStart && run(c.canClick, c))run(c.onHoldStart, c)
+				if (!this.interval && c.onHold) {
 					this.interval = setInterval((function() {
-						let c = layers[this.layer].clickables[this.data]
 						if(this.time >= 5 && run(c.canClick, c)) {
 							run(c.onHold, c)
 						}	
@@ -359,6 +360,8 @@ function loadVue() {
 					}).bind(this), 50)}
 			},
 			stop() {
+        let c = layers[this.layer].clickables[this.data]
+        if(c.onHoldStop && run(c.canClick, c))run(c.onHoldStop, c)
 				clearInterval(this.interval)
 				this.interval = false
 			  	this.time = 0

@@ -174,7 +174,9 @@ function cr_getcraftstyle(button){
   }
   let style={"background-color": "#222222","border-radius":"10px"}
   if (cr_getitem(itemname)){
-    if (cr_getitem(itemname).gt(0)){
+    if (
+      cr_getitem(itemname).gt(button.id==12 && getClickableState(button.layer,11)===itemname?1:0)
+    ){
       style["background-color"]=col
     }
   }
@@ -238,6 +240,7 @@ let data={
         style(){return cr_getcraftstyle(this)}
       },
       13: {
+        craftvolume:1,
         canClick() {
           let ing1=getClickableState(this.layer,11)
           let ing2=getClickableState(this.layer,12)
@@ -262,19 +265,28 @@ let data={
           let ing1=getClickableState(this.layer,11)
           let ing2=getClickableState(this.layer,12)
           let result=cr_getresult(ing1,ing2)
-          if (
-            (cr_hasitem(ing1,1)&&cr_hasitem(ing2,1))&&
-          (!(ing1==ing2) || cr_hasitem(ing1,2))//if they're the same, check you have 2 of em
-          
-          ){
-            for(i in result){
-              cr_additem(result[i].r,result[i].a)
+          for (let l=1;l<=this.craftvolume;l++){
+            if (
+              (cr_hasitem(ing1,1)&&cr_hasitem(ing2,1))&&
+            (!(ing1==ing2) || cr_hasitem(ing1,2))//if they're the same, check you have 2 of em
+            
+            ){
+              for(i in result){
+                cr_additem(result[i].r,result[i].a)
+              }
+              cr_subitem(ing1,1)
+              cr_subitem(ing2,1)
             }
-            cr_subitem(ing1,1)
-            cr_subitem(ing2,1)
           }
         },
-        onHold(){this.onClick()},
+        onHoldStart(){console.log("start");this.craftvolume=1},
+        onHold(){
+          console.log(this.craftvolume,layers.re.buyables.extraction.effect())
+          this.onClick()
+          this.craftvolume+=1
+          this.craftvolume=Math.min(this.craftvolume,layers.re.buyables.extraction.effect())
+        },
+        onHoldStop(){this.craftvolume=1},
         display() {
           let ing1=getClickableState(this.layer,11)
           let ing2=getClickableState(this.layer,12)
@@ -282,7 +294,7 @@ let data={
           if (!result) return "no craftable item"
           let output=""
           for(i in result){
-            output+=`${result[i].a}x ${result[i].r}\n`
+            output+=`${result[i].a*this.craftvolume}x ${result[i].r}\n`
           }
           return output
         }

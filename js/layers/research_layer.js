@@ -8,7 +8,8 @@ re_researchstyle={
 }
 
 re_researchstyle_blank={...re_researchstyle}
-re_researchstyle_blank.opacity="0"
+re_researchstyle_blank["background-color"]="#00000000"
+re_researchstyle_blank["border"]="none"
 re_researchstyle_blank["pointer-events"]="none"
 re_researchstyle_blank_flat={...re_researchstyle_blank}
 re_researchstyle_blank_flat.height="30px"
@@ -25,7 +26,9 @@ re_upgrades={
     </div>`,
     pay(){cr_subitem("dust",30)},
     style: re_researchstyle,
-    branches:["circuit_unlock","dusthotkey "],
+    branches:[
+      ["circuit_unlock","#24523b"],
+    ],
   },
   circuit_unlock: {
     canAfford(){return cr_hasitem("logic slate",4) && cr_hasitem("responsive cable",10)},
@@ -37,7 +40,9 @@ re_upgrades={
     </div>`,
     pay(){cr_subitem("responsive cable",10)},
     style: re_researchstyle,
-    branches:["builder_unlock"],
+    branches:[
+      ["builder_unlock","#24523b"],
+    ],
   },
   builder_unlock: {
     canAfford(){return cr_hasitem("dust shard",30) && cr_hasitem("lively dust",10) && Object.keys(player.ma.solved_puzzles).length>=6},
@@ -51,7 +56,9 @@ re_upgrades={
     style: re_researchstyle,
   },
   dusthotkey: {
-    branches:["blank_0_1"],
+    branches:[
+      ["blank_0_1","#24523b"],
+    ],
     canAfford(){return cr_hasitem("dust",200) && cr_hasitem("engraved bricks",30)},
     fullDisplay:`devise hotkey for dust collection
     <div style="text-align: right">
@@ -64,22 +71,25 @@ re_upgrades={
   },
   blank: {
     canAfford: false,
-    style: re_researchstyle_blank
+    style: re_researchstyle_blank,
+    fullDisplay(){return ""},
   },
   blank_flat: {
     canAfford: false,
-    style: re_researchstyle_blank_flat
+    style: re_researchstyle_blank_flat,
+    fullDisplay(){return ""},
   }
 }
 
 for (let l=0;l<=11;l++){re_upgrades[`blank_${(l/3)|0}_${l%3}`]={
   branches: [
-    `blank_${(l/3)|0}_0`,
-    `blank_${(l/3)|0}_1`,
-    `blank_${(l/3)|0}_2`,
+    [`blank_${(l/3)|0}_0`,"#24523b"],
+    [`blank_${(l/3)|0}_1`,"#24523b"],
+    [`blank_${(l/3)|0}_2`,"#24523b"],
   ],
+  fullDisplay(){return ""},
   canAfford: false,
-  style: re_researchstyle_blank_flat
+  style: re_researchstyle_marker
 }}
 
 addLayer("re",{
@@ -139,7 +149,7 @@ addLayer("re",{
       },
       display() {
         let amt=getBuyableAmount(this.layer, this.id)
-        return `ENHANCE GATHERING
+        return `ENHANCE BULK CRAFTING
         CURRENT: ${amt}
         &lt;USE ${`${this.cost().a}`.toUpperCase()} ${this.cost().i.toUpperCase()}>
         EFFECT: x${this.effect()}`
