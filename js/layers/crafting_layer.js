@@ -4,6 +4,9 @@
 
 cr_data={
   resources: {
+    "a":[
+      {name:"empty",c:"#222222"},
+    ],
     100:[//dust stuff
       {name:"dust",c:"#b9bffb"},
       {name:"compressed dust",c:"#849be4"},
@@ -60,6 +63,10 @@ cr_startdata={
   unlocked: true,
   selected: "",
   items: {},
+
+  craftvolume:1,
+
+  chip_mode:"use",
 }
 for ([column,resources] of Object.entries(cr_data.resources)){
   for ([row,resource] of Object.entries(resources)){
@@ -265,7 +272,7 @@ let data={
           let ing1=getClickableState(this.layer,11)
           let ing2=getClickableState(this.layer,12)
           let result=cr_getresult(ing1,ing2)
-          for (let l=1;l<=this.craftvolume;l++){
+          for (let l=1;l<=player.cr.craftvolume;l++){
             if (
               (cr_hasitem(ing1,1)&&cr_hasitem(ing2,1))&&
             (!(ing1==ing2) || cr_hasitem(ing1,2))//if they're the same, check you have 2 of em
@@ -279,14 +286,14 @@ let data={
             }
           }
         },
-        onHoldStart(){console.log("start");this.craftvolume=1},
+        onHoldStart(){console.log("start");player.cr.craftvolume=1},
         onHold(){
-          console.log(this.craftvolume,layers.re.buyables.extraction.effect())
+          console.log(player.cr.craftvolume,layers.re.buyables.extraction.effect())
           this.onClick()
-          this.craftvolume+=1
-          this.craftvolume=Math.min(this.craftvolume,layers.re.buyables.extraction.effect())
+          player.cr.craftvolume+=1
+          player.cr.craftvolume=Math.min(player.cr.craftvolume,layers.re.buyables.extraction.effect())
         },
-        onHoldStop(){this.craftvolume=1},
+        onHoldStop(){player.cr.craftvolume=1},
         display() {
           let ing1=getClickableState(this.layer,11)
           let ing2=getClickableState(this.layer,12)
@@ -294,7 +301,7 @@ let data={
           if (!result) return "no craftable item"
           let output=""
           for(i in result){
-            output+=`${result[i].a*this.craftvolume}x ${result[i].r}\n`
+            output+=`${result[i].a*player.cr.craftvolume}x ${result[i].r}\n`
           }
           return output
         }
@@ -302,7 +309,8 @@ let data={
       14: {
         canClick() {return cr_getitem("recipe chip").gt(0)},
         onClick() {
-          cr_subitem("recipe chip",1)
+          player.cr.chip_mode="create"
+          player.subtabs.cr.mainTabs="chips"
         },
         display() {return `save to chip\n(x${cr_getitem("recipe chip")})`},
         style(){
@@ -339,20 +347,32 @@ let data={
       },
     },
     layerShown(){player.co.lifetime_scrounged.gte(30)?true:"ghost"},
-    tabFormat: [
-      ["row",[
-        ["blank",["50px","1px"]],
-        ["clickable",11],
-        ["clickable",12],
-        ["blank",["50px","50px"]],
-        ["column",[
-        ]],
-        ["clickable",13],
-        ["clickable",14]
-      ]],
-      "blank",
-      "grid"
-    ],
+    tabFormat: {
+      crafting:{
+        content:[
+          ["row",[
+            ["blank",["50px","1px"]],
+            ["clickable",11],
+            ["clickable",12],
+            ["blank",["50px","50px"]],
+            ["column",[
+            ]],
+            ["clickable",13],
+            ["clickable",14]
+          ]],
+          "blank",
+          "grid"
+        ],
+      },
+      chips:{
+        content:[
+          ["blank",["100px","100px"]],
+          ["layer-proxy",["cr_chips",[
+            "grid"
+          ]]],
+        ]
+      },
+    },
     grid: {
       rows: 10,
       cols: 7,
@@ -425,7 +445,7 @@ let data={
           
           <!--zero items image-->
           <div style="
-          transform:rotatey(180deg) rotate(45deg);
+          transform:rotatey(180deg);
           -webkit-backface-visibility: hidden; /* Safari */
           backface-visibility: hidden;
           box-sizing: border-box;
@@ -458,26 +478,66 @@ let data={
           background-position: ${(id%100+Math.floor(id/100)*9-10)*-100}% 0%
           "></div>
 
+          ${cr_getobj(id).haveseen?`
           <div style="
+          transform:rotatey(180deg);
+          -webkit-backface-visibility: hidden; /* Safari */
+          backface-visibility: hidden;
+          position: absolute;
+          left: 20%;
+          right: 20%;
+          bottom: 0%;
+          top: auto;
+          text-align: center;
+          font-size: 20px;
+          border-radius: 4px 4px 0% 0%;
+          background-color: #22222244;
+          color: red;
+          ">0</div>
+          `:`
+          `}
+
+          
+          <div style="
+          transform:rotatey(180deg);
+          -webkit-backface-visibility: hidden; /* Safari */
+          backface-visibility: hidden;
+          position: absolute;
+          right: 5%;
+          top:  0%;
+          text-align: left;
+          border-radius: 0% 0% 4px 4px;
+          font-size: 50%;
+          color: ${cr_getobj(id).haveseen?"red":"black"};
+          padding-top: 2px;
+          padding-left: 4px;
+          padding-right: 4px;
+          background-color: #22222244;
+          ">${top_title}</div>
+          
+          <div style="
+          transform:rotatey(0deg);
           -webkit-backface-visibility: hidden; /* Safari */
           backface-visibility: hidden;
           position: absolute;
           left: 5%;
-          top:  5%;
+          top:  0%;
           text-align: left;
           border-radius: 0% 0% 4px 4px;
           font-size: 50%;
-          color: ${cr_getitem(id).gt(0)?"white":"black"};
-          padding-left: 10px;
-          padding-right: 10px;
+          color: ${cr_getobj(id).haveseen?"white":"black"};
+          padding-top: 2px;
+          padding-left: 4px;
+          padding-right: 4px;
           background-color: #22222244;
           ">${top_title}</div>
+
           <div 
           style="
           transform:rotatey(0deg);
           -webkit-backface-visibility: hidden; /* Safari */
           backface-visibility: hidden;
-          color: ${cr_getitem(id).gt(0)?"white":"black"};
+          color: ${cr_getobj(id).haveseen?"white":"black"};
           border-radius: 4px 4px 0% 0%;
           padding-left: 10px;
           padding-right: 10px;
@@ -509,3 +569,161 @@ let data={
 sigamount=0
 
 addLayer("cr", data)
+
+
+addLayer("cr_chips",{
+  name: "crafting",
+  color: "#b9bffb",
+  type: "none",
+  startData(){
+    return {
+      points: new Decimal(0)
+    }
+  },
+  grid:{
+    rows:20,
+    cols:3,
+    getStartData(){return {ing1:"",ing2:"",empty:true}},
+    canClick() {
+      return cr_getresult(data.ing1,data.ing2)?true:false
+    },
+    getStyle(data){
+      return {
+        "box-shadow":"none",
+        "border": "none",
+        "background": "transparent",
+        "color":"black",
+        "width": "200px",
+        "height": "100px",
+        "border-radius": "0px",
+        "margin":"2px",
+      }
+    },
+    onHoldStart(data,id){player.cr.craftvolume=1;player.cr.target_id=id},
+    onHold(data,id){
+      console.log(player.cr.craftvolume,layers.re.buyables.extraction.effect())
+      if(id)clickGrid("cr_chips", id)
+      player.cr.craftvolume+=1
+      player.cr.craftvolume=Math.min(player.cr.craftvolume,layers.re.buyables.extraction.effect())
+    },
+    onHoldStop(){player.cr.craftvolume=1},
+    onClick(data,id){
+      if(player.cr.chip_mode=="create"){
+        if(data.empty)cr_subitem("recipe chip",1)
+        data.empty=false
+        data.ing1=getClickableState("cr",11)
+        data.ing2=getClickableState("cr",12)
+        player.cr.chip_mode="use"
+      }else{
+        let ing1=data.ing1
+        let ing2=data.ing2
+        let result=cr_getresult(ing1,ing2)
+        for (let l=1;l<=player.cr.craftvolume;l++){
+          if (
+            (cr_hasitem(ing1,1)&&cr_hasitem(ing2,1))&&
+            (!(ing1==ing2) || cr_hasitem(ing1,2))//if they're the same, check you have 2 of em
+            
+            ){
+            for(i in result){
+              cr_additem(result[i].r,result[i].a)
+            }
+            cr_subitem(ing1,1)
+            cr_subitem(ing2,1)
+          }
+        }
+      }
+    },
+    onRClick(data,id){
+      if (!data.empty){
+        cr_additem("recipe chip",1)
+        setGridData("cr_chips",id,{ing1:"",ing2:"",empty:true})
+      }
+    },
+    getTooltip(data,id){
+      let relevant=[]
+      if(data){
+        relevant[data.ing1]=1
+        relevant[data.ing2]=1
+        let results=cr_getresult(data.ing1,data.ing2)
+        if(results){
+          for (let result of results){
+            relevant[result.r]=1
+          }
+        }
+      }
+      let tooltip=""
+      for (let relevantitem in relevant){
+        tooltip+=`${relevantitem}:<br>${cr_getitem(relevantitem).toString()}<br>`
+      }
+      return tooltip
+    },
+    getTitle(data,id){
+      let volume=player.cr.target_id==id?player.cr.craftvolume:1
+
+      let title=""
+
+      let result=cr_getresult(data.ing1,data.ing2)
+      let grad="#222222"
+      let result_text=""
+      if(result){
+        grad=cr_getgrad(result)
+        for(let item of result){
+          result_text+=`${item.r} x${item.a*volume}<br>`
+        }
+      }else{
+        result_text="invalid recipe"
+      }
+
+      title+=`<div style="
+      border: solid;
+      position:absolute;
+      height:calc(60% - (12px));
+      bottom:3px;
+      left:3px;
+      right:3px;
+      border-radius: 0px 0px 7px 7px;
+      padding-left:5px;
+      padding-left:5px;
+      text-align:left;
+      background:${grad};
+      ">
+        ${result_text}
+      </div>`
+
+      
+      grad="#222222"
+      grad=cr_getgrad([
+        {r:cr_getitem(data.ing1).gt(0)?data.ing1:"empty",a:1},
+        {r:cr_getitem(data.ing2).gt(data.ing1==data.ing2?1:0)?data.ing2:"empty",a:1}
+      ])
+      title+=`<div style="
+      border-style: solid;
+      position:absolute;
+      height:40%;
+      top:0%;
+      left:0%;
+      right:0%;
+      border-radius: 0px;
+      text-align:center;
+      background:${grad};
+      ">
+      <div style="
+      color:${data.empty?"black":"white"};
+      position:absolute;
+      top:calc(0% + 6px);
+      left:5%;
+      right:5%;
+      background-color:#22222244;
+      ">
+        ${(data.ing1===data.ing2)?
+          `${cr_getitem(data.ing1).lt(2)?data.ing1.toUpperCase():data.ing1} x${volume*2}`
+        :
+          `${cr_getitem(data.ing1).lt(1)?data.ing1.toUpperCase():data.ing1} x${volume} & ${cr_getitem(data.ing2).lt(1)?data.ing2.toUpperCase():data.ing2} x${volume}`
+        }
+      </div>
+      </div>`
+      
+      return title
+    }
+  },
+})
