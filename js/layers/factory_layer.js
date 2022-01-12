@@ -21,14 +21,17 @@ class FA_network {
     this.id=id
   }
   getitem(id){
-    return this.items[id]??=0
+    return this.items[id]??=new Decimal(0)
   }
   setitem(id,amount){
-    this.items[id]=amount
+    this.items[id]=new Decimal(amount)
   }
   additem(id,amount){
-    this.items[id]??=0
-    this.items[id]+=amount
+    console.log(`network ${this.id} has ${this.items[id]} ${id}`)
+    if(this.items[id]===undefined)this.items[id]=new Decimal(0)
+    console.log(`network ${this.id} has ${this.items[id]} ${id} + ${amount}`)
+    this.items[id]=this.items[id].add(amount)
+    console.log(`network ${this.id} has ${this.items[id]} ${id}`)
   }
 }
 
@@ -50,22 +53,30 @@ class FA_factory {
     let outputstring=""
     let networks=[]
     this.machines=[]
-    for (const [pos,machine] of Object.entries(this.tiles)){machine.network=null}
+    for (const [pos,machine] of Object.entries(this.tiles)){
+      machine.network=null
+      machine.networked_sides={}
+    }
     for (const [pos,machine] of Object.entries(this.tiles)){
       if(machine.network_target){
+        machine.outputsides=0
+        for (let l=0;l<=3;l++){
+          if (machine.open(l) && machine.io_port(l+2)){
+            machine.outputsides+=1
+          }
+        }
         this.machines.push(machine)
       }
       if (machine.recursivenetwork && machine.network===null){
-        let network=new FA_network(networks.length+1)
-        machine.recursivenetwork(network)
-        networks.push(network)
+        //let network=new FA_network(networks.length+1)
+        //machine.recursivenetwork(network)
+        //networks.push(network)
       }else if(machine.network_target){
         for (let l=0;l<=3;l++){
-          if (machine.open(l) && !machine.networked_sides[l]){
+          if (machine.open(l) && machine.networked_sides[l]===undefined){
             let network=new FA_network(networks.length+1)
             if (machine.io_port(l+2)=="push"){network.inputs.push(machine)}else{network.outputs.push(machine)}
             machine.network_side(network,l)
-            machine.neighbor(l).networked_sides[(l+2)%4]=network.id
             networks.push(network)
           }
         }
@@ -78,6 +89,7 @@ class FA_factory {
   }
   tick_sim(){
     for (let machine of this.machines){
+      machine.sends={}
       machine.requests=[]
       let recievable=[]
       for(let [item,amount] of Object.entries(machine.recievablefromnetwork)){
@@ -91,9 +103,8 @@ class FA_factory {
           recievable[input.r]??=new Decimal(0)
           transforms=transforms.min(recievable[input.r].div(input.a))
         }
-        machine.sends=[]
         for (let output of io.outputs){
-          machine.sends[output.r],transforms*output.a
+          machine.sends[output.r]=transforms.mul(output.a)
         }
 
         for (let input of io.inputs){
@@ -103,6 +114,14 @@ class FA_factory {
         }
       }
       machine.recievablefromnetwork=[]
+    }
+    for (let network of this.networks){
+      for (let input of network.inputs){
+        for (let [item,amount] of Object.entries(input.sends)){
+          console.log(item,amount,input.outputsides)
+          network.additem(item,new Decimal(amount).div(input.outputsides))
+        }
+      }
     }
     for (let network of this.networks){
       network.requests=[]
@@ -130,6 +149,7 @@ class FA_machine {
     this.IO=["none","none","none","none"]
     this.networked_sides=[]
     this.recievablefromnetwork=[]
+    this.outputsides=1
   }
   neighbor(side){
     let o=cr_orderofchecks[side]
@@ -154,13 +174,14 @@ class FA_machine {
     return spritepos
   }
   network_side(network,l){
+    this.networked_sides[l]=network.id
     if (this.neighbor(l).recursivenetwork){
       if (this.neighbor(l).network===null){
         this.neighbor(l).recursivenetwork(network)
       }
     }
-    if (this.neighbor(l).io_port(l)=="pull")network.outputs.push(this.neighbor(l));this.neighbor(l).networked_sides[(l+2)%4]=network.id
-    if (this.neighbor(l).io_port(l)=="push")network.inputs .push(this.neighbor(l));this.neighbor(l).networked_sides[(l+2)%4]=network.id
+    if (this.neighbor(l).io_port(l)=="pull" && !network.outputs.includes(this.neighbor(l)))network.outputs.push(this.neighbor(l));this.neighbor(l).networked_sides[(l+2)%4]=network.id
+    if (this.neighbor(l).io_port(l)=="push" && !network.inputs .includes(this.neighbor(l)))network.inputs .push(this.neighbor(l));this.neighbor(l).networked_sides[(l+2)%4]=network.id
   }
 }
 class FA_empty extends FA_machine{
@@ -273,7 +294,7 @@ class FA_drill extends FA_machine{
       outputs:[
         {a:1,r:"dust"},
       ],
-      maxtransforms:10
+      maxtransforms:100
     }
   }
 }
@@ -296,6 +317,7 @@ class FA_pipe extends FA_machine{
     ]
   }
   recursivenetwork(network){
+    console.log("pipe")
     network.pipes.push(this)
     this.network=network.id
     let dirsseen=0
@@ -535,8 +557,12 @@ addLayer("fa",{
               let txt=`networks: ${getGridData("fa", player.fa.pos).factory.IO}<br>`
               for (const network of getGridData("fa",player.fa.pos).factory.networks){
                 let requests=""
-                for (let [item,requesters] of Object.entries(network.requests)){
+                for (let [item,requesters] of Object.entries(network.requests||{})){
                   requests+=`&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${item}: ${requesters.length}<br>`
+                }
+                let items=""
+                for (let [item,amount] of Object.entries(network.items)){
+                  items+=`&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${item}: ${amount.toNumber()}<br>`
                 }
                 txt+=`
                 &nbsp;&nbsp;network ${network.id}:<br>
@@ -544,6 +570,7 @@ addLayer("fa",{
                 &nbsp;inputs: &nbsp;${`${network.inputs.length}`.padStart(6, '@').replaceAll("@","&nbsp;")}
                 &nbsp;outputs:      ${`${network.outputs.length}`.padStart(6, '@').replaceAll("@","&nbsp;")}<br>
                 &nbsp;&nbsp;&nbsp;&nbsp;requests:<br>${requests}
+                &nbsp;&nbsp;&nbsp;&nbsp;items:<br>${items}
                 `
               }
               return `<div style="

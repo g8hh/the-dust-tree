@@ -53,7 +53,16 @@ addLayer("co",{
         }
       }
     },
-    41: {
+    42: {
+      title: "finish all puzzles",
+      canClick(){return true},
+      onClick(){
+        for (let [_,puzzle] of Object.entries(ma_puzzledata)){
+          player.ma.solved_puzzles[puzzle.title]=true
+        }
+      }
+    },
+    43: {
       title: "clear all resources",
       canClick(){return true},
       onClick(){
