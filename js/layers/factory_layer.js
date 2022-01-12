@@ -21,17 +21,20 @@ class FA_network {
     this.id=id
   }
   getitem(id){
-    return this.items[id]??=new Decimal(0)
+    this.items[id]??=new Decimal(0)
+    console.log(this.items[id].toString())
+    return this.items[id]
   }
   setitem(id,amount){
     this.items[id]=new Decimal(amount)
   }
   additem(id,amount){
-    console.log(`network ${this.id} has ${this.items[id]} ${id}`)
     if(this.items[id]===undefined)this.items[id]=new Decimal(0)
-    console.log(`network ${this.id} has ${this.items[id]} ${id} + ${amount}`)
     this.items[id]=this.items[id].add(amount)
-    console.log(`network ${this.id} has ${this.items[id]} ${id}`)
+  }
+  subitem(id,amount){
+    if(this.items[id]===undefined)this.items[id]=new Decimal(0)
+    this.items[id]=this.items[id].sub(amount)
   }
 }
 
@@ -56,6 +59,7 @@ class FA_factory {
     for (const [pos,machine] of Object.entries(this.tiles)){
       machine.network=null
       machine.networked_sides={}
+      machine.recievablefromnetwork={}
     }
     for (const [pos,machine] of Object.entries(this.tiles)){
       if(machine.network_target){
@@ -91,10 +95,10 @@ class FA_factory {
     for (let machine of this.machines){
       machine.sends={}
       machine.requests=[]
-      let recievable=[]
+      let recievable={}
       for(let [item,amount] of Object.entries(machine.recievablefromnetwork)){
         recievable[item]??=new Decimal(0)
-        recievable[item]+=amount
+        recievable[item]=recievable[item].add(amount)
       }
       if (machine.calc_transformation){
         let io=machine.calc_transformation()
@@ -108,9 +112,20 @@ class FA_factory {
         }
 
         for (let input of io.inputs){
-          console.log(input.r)
           machine.requests.push(input.r)
-          console.log(machine.requests)
+          let runningamount=transforms.mul(input.a)
+          console.log(input.r,runningamount.toString())
+          for (const [dir,network_id] of Object.entries(machine.networked_sides)){
+            if (machine.IO[dir]=="pull"){
+              let network=this.networks[network_id-1]
+              let removeamount=runningamount.min(network.getitem(input.r))
+              network.subitem(input.r,removeamount)
+              runningamount.sub(removeamount)
+              console.log(`removed ${removeamount} ${input.r} from network ${network_id}, which now has ${network.getitem(input.r)}`)
+              console.log(network_id)
+            }
+          }
+          
         }
       }
       machine.recievablefromnetwork=[]
@@ -118,7 +133,6 @@ class FA_factory {
     for (let network of this.networks){
       for (let input of network.inputs){
         for (let [item,amount] of Object.entries(input.sends)){
-          console.log(item,amount,input.outputsides)
           network.additem(item,new Decimal(amount).div(input.outputsides))
         }
       }
@@ -126,11 +140,16 @@ class FA_factory {
     for (let network of this.networks){
       network.requests=[]
       for(let output of network.outputs){
-        console.log(output.requests)
         for(let request of output.requests){
           console.log(request)
           network.requests[request]??=[]
           network.requests[request].push(output)
+        }
+      }
+      for(let output of network.outputs){
+        for(let request of output.requests){
+          output.recievablefromnetwork[request]??=new Decimal(0)
+          output.recievablefromnetwork[request]=output.recievablefromnetwork[request].add(network.getitem(request).div(network.requests[request].length))
         }
       }
     }
@@ -196,6 +215,9 @@ class FA_empty extends FA_machine{
 class FA_crafter extends FA_machine{
   constructor(pos){
     super(pos)
+
+    this.speed=2000
+
     this.name="crafter"
     this.sprite="./crafter_E.png"
     this.spritepos=15
@@ -224,7 +246,7 @@ class FA_crafter extends FA_machine{
           outputs:[
             {a:1,r:"compressed dust"},
           ],
-          maxtransforms:50
+          maxtransforms:this.speed
         }
       case "brck":
         return {
@@ -234,7 +256,7 @@ class FA_crafter extends FA_machine{
           outputs:[
             {a:1,r:"dust bricks"},
           ],
-          maxtransforms:50
+          maxtransforms:this.speed
         }
       case "shrd":
         return {
@@ -244,7 +266,7 @@ class FA_crafter extends FA_machine{
           outputs:[
             {a:1,r:"dust shard"},
           ],
-          maxtransforms:50
+          maxtransforms:this.speed
         }
       case "sive":
         return {
@@ -256,7 +278,8 @@ class FA_crafter extends FA_machine{
             {a:1,r:"responsive dust"},
             {a:1,r:"lively dust"},
             {a:1,r:"engraved bricks"}
-          ]
+          ],
+          maxtransforms:this.speed
         }
       case "comb":
         return {
@@ -266,7 +289,8 @@ class FA_crafter extends FA_machine{
           ],
           outputs:[
             {a:1,r:"dust"},
-          ]
+          ],
+          maxtransforms:this.speed
         }
     }
   }
@@ -317,7 +341,6 @@ class FA_pipe extends FA_machine{
     ]
   }
   recursivenetwork(network){
-    console.log("pipe")
     network.pipes.push(this)
     this.network=network.id
     let dirsseen=0
