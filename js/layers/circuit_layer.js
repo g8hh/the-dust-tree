@@ -196,7 +196,8 @@ class MA_port extends MA_component {
         let port=player.ma.outputports[this.port]
         if(port){
           let exv=port.data[port.index]
-          if (exv==v){
+          console.log(exv)
+          if (v.equals(exv)){
             port.index+=1
             if(ma_checkwin()){
               player.ma.error_message=`all tests passed, circuit seems functional!`
@@ -207,7 +208,7 @@ class MA_port extends MA_component {
             }
           }else{
             console.log(exv,v,"fail")
-            player.ma.error_message=`expected ${exv} at ouput ${this.port}, instead got ${v}`
+            player.ma.error_message=`expected ${(new Fraction(exv)).toFraction()} at ouput ${this.port}, instead got ${v.toFraction() }`
             player.ma.error_port=this.port
             player.ma.paused=true
           }
@@ -602,7 +603,7 @@ ma_puzzledata={
     {
       imgpos: 2,
       title: "sub",
-      desc: "subtract I1 from I0, send to O0\n(subtraction is done with the logic slate)",
+      desc: "send I0 minus I1 to O0\n(subtraction is done with the logic slate)",
       inputs: [
         [12, 0, -50],
         [ 4, 4,-150]
@@ -613,8 +614,33 @@ ma_puzzledata={
         let b=ma_r(99)
         return {i:[[a],[b]],o:[[a-b]]}
       },
-      rtests_required: 47
-    }
+      rtests_required: 27
+    },
+    {
+      imgpos: 5,
+      title: "filter",
+      desc: "send only values from I0 > 0 to O0",
+      inputs: [[]],
+      outputs: [[]],
+      randomized_test(){
+        let v=ma_r(99)
+        return {i:[[v]],o:[v>0?[v]:[]]}
+      },
+      rtests_required: 30
+    },
+    {
+      imgpos: 10,
+      title: "divide",
+      desc: "send I0 divded by I1 to O0",
+      inputs: [[],[]],
+      outputs: [[]],
+      randomized_test(){
+        let a=ma_r(99)
+        let b=ma_r(99)
+        return {i:[[a],[b]],o:[[new Fraction(a,b)]]}
+      },
+      rtests_required: 30
+    },
   ],
   200: [
     {
@@ -640,21 +666,9 @@ ma_puzzledata={
       rtests_required: 30
     },
     {
-      imgpos: 5,
-      title: "filter",
-      desc: "send only values from I0 greater than 0 to O0",
-      inputs: [[]],
-      outputs: [[]],
-      randomized_test(){
-        let v=ma_r(99)
-        return {i:[[v]],o:[v>0?[v]:[]]}
-      },
-      rtests_required: 30
-    },
-    {
       imgpos: 6,
       title: "absolute",
-      desc: "convert each negative number into a positive number, and leave positive numbers alone.",
+      desc: "for each number from I0, send the absolute value to O0",
       inputs: [[0]],
       outputs: [[0]],
       randomized_test(){
@@ -684,7 +698,7 @@ ma_puzzledata={
     {
       imgpos: 8,
       title: "switch",
-      desc: "if I2<=0, send I0 to O0, else send I1 to O0",
+      desc: "if I2 <= 0, send I0 to O0, else send I1 to O0",
       inputs: [
         [14],
         [123],
@@ -702,10 +716,21 @@ ma_puzzledata={
     }
   ]
 }
-for ([rowi,row] of Object.entries(ma_puzzledata)){
-  for ([i,v] of Object.entries(row)){
+for (const [rowi,row] of Object.entries(ma_puzzledata)){
+  for (const [i,v] of Object.entries(row)){
     let id=Number(rowi)+Number(i)+1
     ma_puzzledata[id]=v
+    for (const port of v.inputs){
+      for (let i in port){
+        port[i]=new Fraction(i)
+      }
+    }
+    for (const port of v.outputs){
+      for (let i in port){
+        port[i]=new Fraction(i)
+        console.log(port[i])
+      }
+    }
   }
 }
 
@@ -715,7 +740,13 @@ ma_cooldown=0
 function ma_loadpuzzle(id){
   let puz=ma_puzzledata[id]
   player.ma.puzzlename=puz.title
-  player.ma.puzzledesc=puz.desc
+  let desc=puz.desc
+  desc=desc.replaceAll(/([\<\>\=])/g,"!!$1")
+  desc=desc.replaceAll(/([^IO])([-\+]?)([0-9]+)/g,"$1<span style='color:\#59c135;background-color:\#222222;padding:1px 4px;border-radius:3px'>$2$3</span>")
+  desc=desc.replaceAll(/\!\!([\<\>\=])/g,"<span style='color:\#bc4a9b'>$1</span>")
+  desc=desc.replaceAll(/(I[0-9]+)/g,"<span style='color:\#eb7d34;background-color:\#222222;padding:1px 4px;border-radius:3px'>$&</span>")
+  desc=desc.replaceAll(/(O[0-9]+)/g,"<span style='color:\#3496eb;background-color:\#222222;padding:1px 4px;border-radius:3px'>$&</span>")
+  player.ma.puzzledesc=desc
   player.ma.inputports=[]
   for (l=0;l<puz.inputs.length;l++){
     player.ma.inputports[l]={data:[...puz.inputs[l]],index:0}
@@ -728,12 +759,12 @@ function ma_loadpuzzle(id){
     let test=puz.randomized_test()
     for (let il=0;il<test.i.length;il++){
       for (let l=0;l<test.i[il].length;l++){
-        player.ma.inputports[il].data.push(test.i[il][l])
+        player.ma.inputports[il].data.push(new Fraction(test.i[il][l]))
       }
     }
     for (let ol=0;ol<test.o.length;ol++){
       for (let l=0;l<test.o[ol].length;l++){
-        player.ma.outputports[ol].data.push(test.o[ol][l])
+        player.ma.outputports[ol].data.push(new Fraction(test.o[ol][l]))
       }
     }
   }
@@ -836,7 +867,7 @@ function ma_checkwin(){
           let y=values.y+values.offset
           if (y<values.data.length){
             let v=values.data[y]
-            return `${y}: ${v !== undefined ? v : ""}`
+            return `${y}: ${v !== undefined &&v.toFraction ? v.toFraction() : ""}`
           }
         }
       },

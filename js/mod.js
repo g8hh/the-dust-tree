@@ -7,11 +7,16 @@ let modInfo = {
     "perlin.js",
     "fraction.js",
     "functions.js",
+
+    
     "layers/research_layer.js",
     "layers/collect_layer.js",
     "layers/crafting_layer.js",
     "layers/circuit_layer.js",
     "layers/factory_layer.js",
+    
+    "layers/cheat_layer.js",
+    
     "tree.js"
   ],
 

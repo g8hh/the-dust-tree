@@ -53,39 +53,12 @@ addLayer("co",{
         }
       }
     },
-    42: {
-      title: "finish all puzzles",
-      canClick(){return true},
-      onClick(){
-        for (let [_,puzzle] of Object.entries(ma_puzzledata)){
-          player.ma.solved_puzzles[puzzle.title]=true
-        }
-      }
-    },
-    43: {
-      title: "clear all resources",
-      canClick(){return true},
-      onClick(){
-        for (let id in cr_data.resources){
-          id=Number(id)
-          cr_setitem(id,cr_setitem(id,0))
-        }
-      }
-    },
-    44: {
-      title: "add 999 to all resources",
-      canClick(){return true},
-      onClick(){
-        for (let id in cr_data.resources){
-          id=Number(id)
-          cr_setitem(id,cr_getitem(id).add(999))
-        }
-      }
-    },
   },
   tabFormat: [
     ["display-text","(hint: you can hold to rapidly collect dust)"],
+    ["blank","20px"],
     "clickables",
+    ["blank","25px"],
     ["raw-html",function() {
       let height=1000
       let width=200

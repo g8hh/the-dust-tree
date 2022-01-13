@@ -155,7 +155,7 @@ function cr_subitem(id,amt){
 function cr_getidname(id){
   if (typeof id=="string"){id=cr_data.nameid[id]}
   if (!cr_data.resources[id]){
-    return new Decimal(0)
+    return ""
   }
   let itemname=cr_data.resources[id].name
   return itemname
@@ -562,7 +562,7 @@ let data={
         return "none"
       }
     },
-    layerShown(){return hasUpgrade("re","crafting_unlock")||"ghost"},
+    layerShown(){return hasUpgrade("re","crafting_unlock") || "ghost"},
     tooltip(){return "manual crafting"}
 }
 

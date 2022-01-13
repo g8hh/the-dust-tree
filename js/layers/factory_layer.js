@@ -22,7 +22,6 @@ class FA_network {
   }
   getitem(id){
     this.items[id]??=new Decimal(0)
-    console.log(this.items[id].toString())
     return this.items[id]
   }
   setitem(id,amount){
@@ -45,15 +44,19 @@ class FA_factory {
     this.networks=[]
   }
   create(id,type){
-    //console.log(`creating ${type} at ${id}`)
     this.tiles[id]=fa_createmachine(type,id)
   }
   getmachine(id){
-    if(!this.tiles[id])this.create(id,"empty")//;console.log("created!",id)
+    if(!this.tiles[id])this.create(id,"empty")
     return this.tiles[id]
   }
   update_io(){
-    let outputstring=""
+    this.recalc_networks()
+    for(let l=0;l<100;l++){
+      this.tick_sim()
+    }
+  }
+  recalc_networks(){
     let networks=[]
     this.machines=[]
     for (const [pos,machine] of Object.entries(this.tiles)){
@@ -88,7 +91,6 @@ class FA_factory {
     }
     this.IO=networks.length
     this.networks=networks
-    this.tick_sim()
     refreshgrid("fa_designer")
   }
   tick_sim(){
@@ -114,15 +116,12 @@ class FA_factory {
         for (let input of io.inputs){
           machine.requests.push(input.r)
           let runningamount=transforms.mul(input.a)
-          console.log(input.r,runningamount.toString())
           for (const [dir,network_id] of Object.entries(machine.networked_sides)){
             if (machine.IO[dir]=="pull"){
               let network=this.networks[network_id-1]
               let removeamount=runningamount.min(network.getitem(input.r))
               network.subitem(input.r,removeamount)
               runningamount.sub(removeamount)
-              console.log(`removed ${removeamount} ${input.r} from network ${network_id}, which now has ${network.getitem(input.r)}`)
-              console.log(network_id)
             }
           }
           
@@ -141,7 +140,6 @@ class FA_factory {
       network.requests=[]
       for(let output of network.outputs){
         for(let request of output.requests){
-          console.log(request)
           network.requests[request]??=[]
           network.requests[request].push(output)
         }
@@ -216,7 +214,7 @@ class FA_crafter extends FA_machine{
   constructor(pos){
     super(pos)
 
-    this.speed=2000
+    this.speed=4000
 
     this.name="crafter"
     this.sprite="./crafter_E.png"
@@ -318,7 +316,7 @@ class FA_drill extends FA_machine{
       outputs:[
         {a:1,r:"dust"},
       ],
-      maxtransforms:100
+      maxtransforms:1000
     }
   }
 }
@@ -413,7 +411,6 @@ function fa_fixfactories(){
       }
       for (const [pos,machine] of Object.entries(newfactory.tiles)){
         if (pos%100<=12){
-          //console.log(`fixxed ${pos}`,machine)
           if(machine){
             newfactory.tiles[pos]=fa_createmachine(machine.name,pos)
             for (const [key,value] of Object.entries(machine)){

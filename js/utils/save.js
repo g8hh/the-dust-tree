@@ -156,6 +156,11 @@ function fixSave() {
     value.amount=new Decimal(value.amount)
   }
   
+  for (let id in cr_data.resources){
+    id=Number(id)
+    cr_setitem(id,(cr_getitem(id).toString()==="NaNeNaN")?0:cr_getitem(id))
+  }
+  
   ma_fixcomponents()
   ma_updatesprites()
   fa_fixfactories()
