@@ -50,7 +50,7 @@ class FA_factory {
     if(!this.tiles[id])this.create(id,"empty")
     return this.tiles[id]
   }
-  update_io(){
+  update_io(){  
     this.recalc_networks()
     for(let l=0;l<100;l++){
       this.tick_sim()
@@ -68,7 +68,7 @@ class FA_factory {
       if(machine.network_target){
         machine.outputsides=0
         for (let l=0;l<=3;l++){
-          if (machine.open(l) && machine.io_port(l+2)){
+          if (machine.open(l) && machine.io_port(l+2)=="push"){
             machine.outputsides+=1
           }
         }
@@ -103,13 +103,16 @@ class FA_factory {
         recievable[item]=recievable[item].add(amount)
       }
       if (machine.calc_transformation){
+        console.log(machine.name)
         let io=machine.calc_transformation()
         let transforms=new Decimal(io.maxtransforms)
         for (let input of io.inputs){
           recievable[input.r]??=new Decimal(0)
+          console.log(`${recievable[input.r]} / ${input.a} (${transforms.toString()})`)
           transforms=transforms.min(recievable[input.r].div(input.a))
         }
         for (let output of io.outputs){
+          console.log(`${output.r} x ${transforms.mul(output.a).toString()} (${transforms.toString()})`)
           machine.sends[output.r]=transforms.mul(output.a)
         }
 
@@ -132,6 +135,7 @@ class FA_factory {
     for (let network of this.networks){
       for (let input of network.inputs){
         for (let [item,amount] of Object.entries(input.sends)){
+          console.log(input.name,input.outputsides)
           network.additem(item,new Decimal(amount).div(input.outputsides))
         }
       }
@@ -600,6 +604,7 @@ addLayer("fa",{
           ]],
           ["row",[
             ["clickable","update_io"],
+            ["clickable","recalc_networks"],
             ["clickable","tick_sim"],
           ]],
           ["row",[
@@ -652,6 +657,13 @@ addLayer("fa_designer",{
         getGridData("fa",player.fa.pos).factory.update_io()
       },
       title: "update io"
+    },
+    "recalc_networks": {
+      canClick: true,
+      onClick(){
+        getGridData("fa",player.fa.pos).factory.recalc_networks()
+      },
+      title: "recalc networks"
     },
     "destroy_selected":{
       canClick(){

@@ -603,7 +603,7 @@ ma_puzzledata={
     {
       imgpos: 2,
       title: "sub",
-      desc: "send I0 minus I1 to O0\n(subtraction is done with the logic slate)",
+      desc: "send I0 - I1 to O0\n(subtraction is done with the logic slate)",
       inputs: [
         [12, 0, -50],
         [ 4, 4,-150]
@@ -631,12 +631,12 @@ ma_puzzledata={
     {
       imgpos: 10,
       title: "divide",
-      desc: "send I0 divded by I1 to O0",
+      desc: "send I0 / I1 to O0",
       inputs: [[],[]],
       outputs: [[]],
       randomized_test(){
         let a=ma_r(99)
-        let b=ma_r(99)
+        let b=ma_r(98)+1
         return {i:[[a],[b]],o:[[new Fraction(a,b)]]}
       },
       rtests_required: 30
@@ -666,6 +666,18 @@ ma_puzzledata={
       rtests_required: 30
     },
     {
+      imgpos: 12,
+      title: "increment",
+      desc: "send I0 + 1 to O0",
+      inputs: [[]],//get pushed to all free wires with a blue io port next to them. (order goes up left right bottom)
+      outputs: [[]],//get pulled to fromm all wires with an orange io port next to them. (order goes up left right bottom)
+      randomized_test(){
+        let v=ma_r(99)
+        return {i:[[v]],o:[[v+1]]}
+      },
+      rtests_required: 30
+    },
+    {
       imgpos: 6,
       title: "absolute",
       desc: "for each number from I0, send the absolute value to O0",
@@ -680,7 +692,7 @@ ma_puzzledata={
     {
       imgpos: 7,
       title: "add",
-      desc: "add I0 to I1, send to O0",
+      desc: "send I0 + I1 to O0",
       inputs: [
         [ 4,-8, 4],
         [90, 4,-8]
@@ -690,6 +702,22 @@ ma_puzzledata={
         let a=ma_r(99)
         let b=ma_r(99)
         return {i:[[a],[b]],o:[[a+b]]}
+      },
+      rtests_required: 30
+    },
+    {
+      imgpos: 11,
+      title: "multiply",
+      desc: "send I0 x I1 to O0",
+      inputs: [
+        [],
+        []
+      ],
+      outputs: [[]],
+      randomized_test(){
+        let a=ma_r(99)
+        let b=ma_r(99)
+        return {i:[[a],[b]],o:[[a*b]]}
       },
       rtests_required: 30
     },
@@ -728,7 +756,6 @@ for (const [rowi,row] of Object.entries(ma_puzzledata)){
     for (const port of v.outputs){
       for (let i in port){
         port[i]=new Fraction(i)
-        console.log(port[i])
       }
     }
   }
@@ -737,15 +764,27 @@ for (const [rowi,row] of Object.entries(ma_puzzledata)){
 ma_maxcooldown=20
 ma_cooldown=0
 
+function ma_syntaxhighlight(desc){
+  desc=desc.replaceAll(/\</g,"&lt;")
+  desc=desc.replaceAll(/\>/g,"&gt;")
+  desc=desc.replaceAll(/\=/g,"&equals;")
+  desc=desc.replaceAll(/\+(?![0-9])/g,"&#43;")
+  desc=desc.replaceAll(/\//g,"&#47;")
+  desc=desc.replaceAll(/\x/g,"&#120;")
+  desc=desc.replaceAll(/\-(?![0-9])/g,"&minus;")
+  desc=desc.replaceAll(/(I[0-9]+)/g,"<span style='color:\#eb7d34;background-color:\#222222;padding:1px 4px;border-radius:3px'>$&</span>")
+  desc=desc.replaceAll(/(O[0-9]+)/g,"<span style='color:\#3496eb;background-color:\#222222;padding:1px 4px;border-radius:3px'>$&</span>")
+  desc=desc.replaceAll(/(?<![IO#0-9a-f])([-+]?[0-9]+)(?!(px|[0-9]))/g
+  ,"<span style='color:#59c135;background-color:#222222;padding:1px 4px;border-radius:3px'>$1</span>")
+  desc=desc.replaceAll(/((&lt;)|(&gt;)|(&#43;)|(&minus;)|(&#47;)|(&#120;)|(&equals;))/g,"<span style='color:\#bc4a9b'>$1</span>")
+  return desc
+}
+
 function ma_loadpuzzle(id){
   let puz=ma_puzzledata[id]
   player.ma.puzzlename=puz.title
   let desc=puz.desc
-  desc=desc.replaceAll(/([\<\>\=])/g,"!!$1")
-  desc=desc.replaceAll(/([^IO])([-\+]?)([0-9]+)/g,"$1<span style='color:\#59c135;background-color:\#222222;padding:1px 4px;border-radius:3px'>$2$3</span>")
-  desc=desc.replaceAll(/\!\!([\<\>\=])/g,"<span style='color:\#bc4a9b'>$1</span>")
-  desc=desc.replaceAll(/(I[0-9]+)/g,"<span style='color:\#eb7d34;background-color:\#222222;padding:1px 4px;border-radius:3px'>$&</span>")
-  desc=desc.replaceAll(/(O[0-9]+)/g,"<span style='color:\#3496eb;background-color:\#222222;padding:1px 4px;border-radius:3px'>$&</span>")
+  desc=ma_syntaxhighlight(desc)
   player.ma.puzzledesc=desc
   player.ma.inputports=[]
   for (l=0;l<puz.inputs.length;l++){
