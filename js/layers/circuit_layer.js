@@ -1,3 +1,5 @@
+console.log("started loading circuits!")
+
 //component classes
 class MA_component {
   constructor(pos){
@@ -1657,3 +1659,5 @@ addLayer("ma", {
   layerShown(){return hasUpgrade("re","circuit_unlock")||"ghost"},
   tooltip(){return "machine design"}
 })
+
+console.log("circuits loaded!")

@@ -1,3 +1,5 @@
+console.log("started loading crafting!")
+
 //https://optimistic-snyder-de15e4.netlify.app/
 
 //https://raw.githack.com/chipsams/The-Modding-Tree/master/index.html
@@ -418,6 +420,10 @@ let data={
           }
           style["background-position"]=`${(id%100+Math.floor(id/100)*9-10)*-100}% 0%`
         }
+        for (let text of ["-o-","-ms-","-moz-","-webkit-"]){
+          style[text+"transform"]=style["transform"]
+          style[text+"transform-style"]=style["transform-style"]
+        }
         return style
       },
       onClick(data, id) { // Don't forget onHold
@@ -481,7 +487,6 @@ let data={
           ${cr_getobj(id).haveseen?`
           <div style="
           transform:rotatey(180deg);
-          -webkit-backface-visibility: hidden; /* Safari */
           backface-visibility: hidden;
           position: absolute;
           left: 20%;
@@ -500,7 +505,6 @@ let data={
           
           <div style="
           transform:rotatey(180deg);
-          -webkit-backface-visibility: hidden; /* Safari */
           backface-visibility: hidden;
           position: absolute;
           right: 5%;
@@ -517,7 +521,6 @@ let data={
           
           <div style="
           transform:rotatey(0deg);
-          -webkit-backface-visibility: hidden; /* Safari */
           backface-visibility: hidden;
           position: absolute;
           left: 5%;
@@ -535,7 +538,6 @@ let data={
           <div 
           style="
           transform:rotatey(0deg);
-          -webkit-backface-visibility: hidden; /* Safari */
           backface-visibility: hidden;
           color: ${cr_getobj(id).haveseen?"white":"black"};
           border-radius: 4px 4px 0% 0%;
@@ -551,6 +553,11 @@ let data={
           ">${cr_getitem(id)}</div>
           </div>
           `
+
+          title=title.replaceAll(/transform:(.*?);/g,"-o-$& -ms-$& -moz-$& -webkit-$& $&")
+          title=title.replaceAll(/backface-visibility:(.*?);/g,"-o-$& -ms-$& -moz-$& -webkit-$& $&")
+          title=title.replaceAll(/transform-style:(.*?);/g,"-o-$& -ms-$& -moz-$& -webkit-$& $&")
+
           return title
       },
       getTooltip(data,id){
@@ -727,3 +734,5 @@ addLayer("cr_chips",{
     }
   },
 })
+
+console.log("crafting loaded!")

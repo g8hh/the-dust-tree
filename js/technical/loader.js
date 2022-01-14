@@ -1,9 +1,10 @@
 // Load files
 
-for (file in modInfo.modFiles) {
+for (file of modInfo.modFiles) {
     let script = document.createElement("script");
-    script.setAttribute("src", "js/" + modInfo.modFiles[file]);
-    script.setAttribute("async", "false");
+    console.log(file)
+    script.setAttribute("src", "js/" + file);//modInfo.modFiles[file]
+    script.removeAttribute("async")
     document.head.insertBefore(script, document.getElementById("temp"));
 }
 

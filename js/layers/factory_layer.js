@@ -1,3 +1,5 @@
+console.log("started loading factory!")
+
 fa_machine_picker={
   1:[
     {name:"pipe"},
@@ -50,7 +52,7 @@ class FA_factory {
     if(!this.tiles[id])this.create(id,"empty")
     return this.tiles[id]
   }
-  update_io(){  
+  update_io(){
     this.recalc_networks()
     for(let l=0;l<100;l++){
       this.tick_sim()
@@ -852,3 +854,5 @@ addLayer("fa_machines",{
     }
   }
 })
+
+console.log("factory loaded!")

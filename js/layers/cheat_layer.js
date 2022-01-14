@@ -1,3 +1,4 @@
+console.log("started loading cheating!")
 
 time=0
 
@@ -163,3 +164,5 @@ addLayer("ch",{
     }]
   ],
 })
+
+console.log("cheating loaded!")

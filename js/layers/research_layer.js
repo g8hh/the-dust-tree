@@ -1,3 +1,4 @@
+console.log("started loading research!")
 
 re_researchstyle={
   "width":"200px",
@@ -186,3 +187,5 @@ addLayer("re",{
   tooltip(){return "devise new systems"}
 })
 //cr_getobj("responsive dust").haveseen
+
+console.log("research loaded!")

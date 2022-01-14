@@ -1,3 +1,4 @@
+console.log("started loading collection!")
 
 addLayer("co",{
   startdust: new Decimal("2e10"),
@@ -86,3 +87,5 @@ addLayer("co",{
   ],
   tooltip(){return "dust collection"+(player.co.lifetime_scrounged.gte(1000)?" overview":"")}
 })
+
+console.log("collection loaded!")

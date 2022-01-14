@@ -1,3 +1,5 @@
+console.log("started loading functions!")
+
 function LightenDarkenColor(col,amt) {
   var usePound = false;
   if ( col[0] == "#" ) {
@@ -63,3 +65,5 @@ function writevar(address,value){
   }catch{
   }
 }
+
+console.log("functions loaded!")
