@@ -128,7 +128,7 @@ function cr_setitem(id,amt){
     player.cr.items[itemname]=cr_newitem(id)
   }
   if (!player.cr.items[itemname].haveseen){
-    if (player.cr.items[itemname].amount.gte(0)){
+    if (player.cr.items[itemname].amount.gt(0)){
       player.cr.items[itemname].haveseen=true
     }
   }
@@ -166,7 +166,7 @@ function cr_getidname(id){
 //misc
 {
 function cr_select_resource(button){
-  if (cr_getitem(button).gt(0)){
+  if (cr_getobj(button).haveseen){
     if (player.cr.selected==button){
       player.cr.selected=""
     }else{
@@ -290,10 +290,10 @@ let data={
         },
         onHoldStart(){console.log("start");player.cr.craftvolume=1},
         onHold(){
-          console.log(player.cr.craftvolume,layers.re.buyables.extraction.effect())
+          console.log(player.cr.craftvolume,layers.re.buyables.crafting.effect())
           this.onClick()
           player.cr.craftvolume+=1
-          player.cr.craftvolume=Math.min(player.cr.craftvolume,layers.re.buyables.extraction.effect())
+          player.cr.craftvolume=Math.min(player.cr.craftvolume,layers.re.buyables.crafting.effect())
         },
         onHoldStop(){player.cr.craftvolume=1},
         display() {
@@ -448,8 +448,11 @@ let data={
           top: 0%;
           bottom: 0%;
           ">
-          
+
           <!--zero items image-->
+          ${
+          cr_getobj(id).haveseen?
+          `
           <div style="
           transform:rotatey(180deg);
           -webkit-backface-visibility: hidden; /* Safari */
@@ -483,6 +486,9 @@ let data={
           background-size:auto 100%;
           background-position: ${(id%100+Math.floor(id/100)*9-10)*-100}% 0%
           "></div>
+          `:
+          ``
+          }
 
           ${cr_getobj(id).haveseen?`
           <div style="
@@ -608,10 +614,10 @@ addLayer("cr_chips",{
     },
     onHoldStart(data,id){player.cr.craftvolume=1;player.cr.target_id=id},
     onHold(data,id){
-      console.log(player.cr.craftvolume,layers.re.buyables.extraction.effect())
+      console.log(player.cr.craftvolume,layers.re.buyables.crafting.effect())
       if(id)clickGrid("cr_chips", id)
       player.cr.craftvolume+=1
-      player.cr.craftvolume=Math.min(player.cr.craftvolume,layers.re.buyables.extraction.effect())
+      player.cr.craftvolume=Math.min(player.cr.craftvolume,layers.re.buyables.crafting.effect())
     },
     onHoldStop(){player.cr.craftvolume=1},
     onClick(data,id){
@@ -733,6 +739,38 @@ addLayer("cr_chips",{
       return title
     }
   },
+})
+
+addLayer("item_picker",{
+  type: "none",
+  startData(){
+    return {
+      points: new Decimal(0)
+    }
+  },
+  grid: {
+    rows:7,
+    cols:7,
+    getStartData(){
+      return 0
+    },
+    getStyle(data,id){
+      id=id-101
+      return{
+        "border-radius":"0px 0px 0px 0px",
+        "border":"none",
+        "margin-bottom  ":"50px",
+        "margin":"-1px",
+        "width":"13px",
+        "height":"13px",
+        "background-image":"url(./items_E.png)",
+        "background-size":"auto 100%",
+        "background-position": `${(id%100+Math.floor(id/100)*9)*-100}% 0%`,
+        "vertical-overflow":"hidden",
+        "overflow":"hidden"
+      }
+    },
+  }
 })
 
 console.log("crafting loaded!")

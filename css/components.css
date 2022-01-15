@@ -180,3 +180,11 @@
 	transition-duration: 0.5s !important;
   z-index: 3000 !important;
 }
+
+.item_picker_holder {
+  
+}
+
+.item_picker_holder:hover {
+  transform: scale(3);
+}

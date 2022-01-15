@@ -29,7 +29,7 @@ addLayer("ch",{
         "border-radius":"10px 10px 10px 10px" 
       },
     },
-    "clearitem": {
+    "clearitems": {
       title: "clear all resources",
       canClick(){return true},
       onClick(){
@@ -42,7 +42,7 @@ addLayer("ch",{
         "border-radius":"10px 0px 0px 10px" 
       },
     },
-    "add999item": {
+    "add999toallitems": {
       title: "add 999 to all resources",
       canClick(){return true},
       onClick(){
@@ -52,17 +52,23 @@ addLayer("ch",{
         }
       },
       style:{
-        "border-radius":"0px 10px 10px 0px"
+        "border-radius":"0px 0px 0px 0px"
       },
     },
-    "setitem":{
+    "forgetitems":{
+      title: "forget all empty resources",
       canClick(){return true},
       onClick(){
         for (let id in cr_data.resources){
           id=Number(id)
-          cr_setitem(id,cr_getitem(id).add(999))
+          if (cr_getitem(id).lte(0)){
+            cr_getobj(id).haveseen=false
+          }
         }
-      }
+      },
+      style:{
+        "border-radius":"0px 10px 10px 0px"
+      },
     },
 
     "clearsel":{
@@ -135,8 +141,9 @@ addLayer("ch",{
     ["row",[
       ["clickable","finishpuz"],
       ["blank",["10px","10px"]],
-      ["clickable","clearitem"],
-      ["clickable","add999item"],
+      ["clickable","clearitems"],
+      ["clickable","add999toallitems"],
+      ["clickable","forgetitems"],
     ]],
     ["display-text",function(){return time|0}],
     ["layer-proxy",["cr",[

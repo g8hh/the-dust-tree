@@ -759,12 +759,65 @@ function loadVue() {
   })
 
   
-	Vue.component('custom-clickable', {
+	Vue.component('item-picker', {
     props: ['layer','data'],
     template: `
-    
-    `
+    <div style="
+    ">
+    <button
+    v-on:click="onclick()"
+    :style="getPickerStyle()"
+    >{{accessvar(this.data)}}</button>
+    <div style="
+    width:max-content;
+    height:0px;
+    border:solid;
+    pointer-events:auto;
+    " class="item_picker_holder">
+    <grid style="
+    transform: translate(0px, -100%);
+    " layer="item_picker"></grid>
+    </div>
+    </div>
+    `,
+    methods: {
+      onclick(){
+        console.log("click")
+        let id=accessvar(this.data)
+        
+        console.log(id)
+        id=Number(cr_data.nameid[id])+1
+        
+        if(!cr_data.resources[id])id=101
+        
+        console.log(id)
+        id=cr_data.resources[id].name
+        
+        console.log(id)
+        writevar(this.data,id)
+      },
+      getPickerStyle(){
+        let imgpos=cr_data.nameid[accessvar(this.data)]-101
+        console.log(imgpos)
+        return `
+        border: solid;
+        background-color:transparent;
+        border-radius:5px;
+        width:80px;
+        height:80px;
+        background-image:url(./items_E.png);
+        background-size:auto 100%;
+        background-position: ${imgpos%100*-100}% 0%;
+        transition: all .5s, background-position 1ms; 
+        pointer-events:auto;
+        margin-top:5px;
+        margin-bottom:5px;
+        `
+      }
+    }
   })
+
+  
 
 
 

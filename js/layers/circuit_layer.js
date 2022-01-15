@@ -605,7 +605,7 @@ ma_puzzledata={
     {
       imgpos: 2,
       title: "sub",
-      desc: "send I0 - I1 to O0\n(subtraction is done with the logic slate)",
+      desc: "send I0 - I1 to O0",
       inputs: [
         [12, 0, -50],
         [ 4, 4,-150]
@@ -621,7 +621,7 @@ ma_puzzledata={
     {
       imgpos: 5,
       title: "filter",
-      desc: "send only values from I0 > 0 to O0",
+      desc: "where I0 > 0, send I0 to O0, otherwise send nothing to O0",
       inputs: [[]],
       outputs: [[]],
       randomized_test(){
@@ -680,18 +680,6 @@ ma_puzzledata={
       rtests_required: 30
     },
     {
-      imgpos: 6,
-      title: "absolute",
-      desc: "for each number from I0, send the absolute value to O0",
-      inputs: [[0]],
-      outputs: [[0]],
-      randomized_test(){
-        let v=ma_r(99)
-        return {i:[[v]],o:[[v<=0?-v:v]]}
-      },
-      rtests_required: 29
-    },
-    {
       imgpos: 7,
       title: "add",
       desc: "send I0 + I1 to O0",
@@ -726,6 +714,18 @@ ma_puzzledata={
   ],
   300:[
     {
+      imgpos: 6,
+      title: "absolute",
+      desc: "for each number from I0, send the absolute value to O0",
+      inputs: [[0]],
+      outputs: [[0]],
+      randomized_test(){
+        let v=ma_r(99)
+        return {i:[[v]],o:[[v<=0?-v:v]]}
+      },
+      rtests_required: 29
+    },
+    {
       imgpos: 8,
       title: "switch",
       desc: "if I2 <= 0, send I0 to O0, else send I1 to O0",
@@ -752,12 +752,12 @@ for (const [rowi,row] of Object.entries(ma_puzzledata)){
     ma_puzzledata[id]=v
     for (const port of v.inputs){
       for (let i in port){
-        port[i]=new Fraction(i)
+        port[i]=new Fraction(port[i])
       }
     }
     for (const port of v.outputs){
       for (let i in port){
-        port[i]=new Fraction(i)
+        port[i]=new Fraction(port[i])
       }
     }
   }
@@ -774,8 +774,8 @@ function ma_syntaxhighlight(desc){
   desc=desc.replaceAll(/\//g,"&#47;")
   desc=desc.replaceAll(/\x/g,"&#120;")
   desc=desc.replaceAll(/\-(?![0-9])/g,"&minus;")
-  desc=desc.replaceAll(/(I[0-9]+)/g,"<span style='color:\#eb7d34;background-color:\#222222;padding:1px 4px;border-radius:3px'>$&</span>")
-  desc=desc.replaceAll(/(O[0-9]+)/g,"<span style='color:\#3496eb;background-color:\#222222;padding:1px 4px;border-radius:3px'>$&</span>")
+  desc=desc.replaceAll(/(I[0-9]+)/g,"<span style='color:\#3496eb;background-color:\#222222;padding:1px 4px;border-radius:3px'>$&</span>")
+  desc=desc.replaceAll(/(O[0-9]+)/g,"<span style='color:\#eb7d34;background-color:\#222222;padding:1px 4px;border-radius:3px'>$&</span>")
   desc=desc.replaceAll(/(?<![IO#0-9a-f])([-+]?[0-9]+)(?!(px|[0-9]))/g
   ,"<span style='color:#59c135;background-color:#222222;padding:1px 4px;border-radius:3px'>$1</span>")
   desc=desc.replaceAll(/((&lt;)|(&gt;)|(&#43;)|(&minus;)|(&#47;)|(&#120;)|(&equals;))/g,"<span style='color:\#bc4a9b'>$1</span>")
