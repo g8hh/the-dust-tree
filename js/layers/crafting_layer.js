@@ -749,28 +749,32 @@ addLayer("item_picker",{
     }
   },
   grid: {
-    rows:7,
-    cols:7,
+    rows:9,
+    cols:9,
     getStartData(){
       return 0
     },
     getStyle(data,id){
-      id=id-101
+      let img=id-101
       return{
-        "border-radius":"0px 0px 0px 0px",
+        "border-radius":`${id==101?1:0}0px ${id==109?1:0}0px ${id==909?1:0}0px ${id==901?1:0}0px`,
         "border":"none",
         "margin-bottom  ":"50px",
-        "margin":"-1px",
-        "width":"13px",
-        "height":"13px",
+        "margin":"0px",
+        "width":"45px",
+        "height":"45px",
+        "background-color":(cr_data.resources[id]||{c:"#22222244"}).c,
         "background-image":"url(./items_E.png)",
         "background-size":"auto 100%",
-        "background-position": `${(id%100+Math.floor(id/100)*9)*-100}% 0%`,
+        "background-position": `${(img%100+Math.floor(img/100)*9)*-100}% 0%`,
         "vertical-overflow":"hidden",
         "overflow":"hidden"
       }
     },
-  }
+    onClick(){
+      player.fa.item_picker_state="closed"
+    }
+  },
 })
 
 console.log("crafting loaded!")

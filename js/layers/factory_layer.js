@@ -478,7 +478,7 @@ function machineconfiglayout(){
           configlayout.push(["4way-bad-toggle",[[v+"[3]",v+"[0]",v+"[2]",v+"[1]"],["open","none"],["#14a02e","#4a5462"],function(){refreshneighbors("fa_designer",player.fa.selectedmachine.pos)}],{"pointer-events":"auto"}])
           break
         case "item":
-          configlayout.push(["item-picker",v])
+          configlayout.push(["item-picker-button",v])
       }
     }
   }
@@ -509,6 +509,8 @@ addLayer("fa",{
       selectedmachine:null,
 
       placemachine:"pipe",
+
+      item_picker_state:"closed",
     }
   },
   update(diff){
@@ -558,67 +560,68 @@ addLayer("fa",{
     },
     designer: {
         content: [
-          //["display-text",function(){return player.fa.pos}],
+          ["display-text",function(){return `current co-ordinates: ${player.fa.pos}`}],
           ["layer-proxy",["fa_designer",[
             ["row",[
               "grid",
+              "item-picker",
               ["column",
-                [
-                  function(){
-                    let configlayout = machineconfiglayout()
-                    return [
-                      "column",
-                      configlayout,
-                      {
-                        "width":configlayout.length>0?`${52+52+20}px`:"20px",
-                        "transition":"background-color 1s"
-                      }
-                    ]
-                  }
-                ],
-                function (){
-                  return {
-                    "pointer-events": "none",
-                    "position":"absolute",
-                    "left":`${accessvar("document.getElementById(\"fa_designer_grid\").getBoundingClientRect().left-document.getElementsByClassName(\"layer-tab\")[1].getBoundingClientRect().left",0)+( accessvar("player.fa.selectedmachine.pos",  -100)%100   )*52-10}px`,
-                    "top": `${accessvar("document.getElementById(\"fa_designer_grid\").getBoundingClientRect().top -document.getElementsByClassName(\"layer-tab\")[1].getBoundingClientRect().top ",0)+((accessvar("player.fa.selectedmachine.pos",-10000)/100)|0)*52-10}px`,
-                    "background-color":"#4a546288",
-                    "border-radius":"0px 10px 10px 10px",
-                    "padding-top":"20px",
-                    "padding-bottom":"20px",
-                    "width":"auto",
-                    "transition":"width 1s, height 1s",
-                    "z-index":"40",
-                  }
+              [
+                function(){
+                  let configlayout = machineconfiglayout()
+                  return [
+                    "column",
+                    configlayout,
+                    {
+                      "width":configlayout.length>0?`${52+52+20}px`:"20px",
+                      "transition":"background-color 1s"
+                    }
+                  ]
                 }
               ],
+              function (){
+                return {
+                  "pointer-events": "none",
+                  "position":"absolute",
+                  "left":`${accessvar("document.getElementById(\"fa_designer_grid\").getBoundingClientRect().left-document.getElementsByClassName(\"layer-tab\")[1].getBoundingClientRect().left",0)+( accessvar("player.fa.selectedmachine.pos",  -100)%100   )*52-10}px`,
+                  "top": `${accessvar("document.getElementById(\"fa_designer_grid\").getBoundingClientRect().top -document.getElementsByClassName(\"layer-tab\")[1].getBoundingClientRect().top ",0)+((accessvar("player.fa.selectedmachine.pos",-10000)/100)|0)*52-10}px`,
+                  "background-color":"#4a546288",
+                  "border-radius":"0px 10px 10px 10px",
+                  "padding-top":"20px",
+                  "padding-bottom":"20px",
+                  "width":"auto",
+                  "transition":"width 1s, height 1s",
+                  "z-index":"40",
+                }
+              }
             ],
           ],
-          ["row",[
-            ["raw-html",function() {
-              let txt=`networks: ${getGridData("fa", player.fa.pos).factory.IO}<br>`
-              for (const network of getGridData("fa",player.fa.pos).factory.networks){
-                let requests=""
-                for (let [item,requesters] of Object.entries(network.requests||{})){
-                  if(requesters)requests+=`&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${item}: ${requesters.length}<br>`
-                }
-                let items=""
-                for (let [item,amount] of Object.entries(network.items)){
-                  items+=`&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${item}: ${amount.toNumber()}<br>`
-                }
-                txt+=`
-                &nbsp;&nbsp;network ${network.id}:<br>
-                &nbsp;&nbsp;&nbsp;&nbsp;pipes: &nbsp; ${`${network.pipes.length}`.padStart(6, '@').replaceAll("@","&nbsp;")}
-                &nbsp;inputs: &nbsp;${`${network.inputs.length}`.padStart(6, '@').replaceAll("@","&nbsp;")}
-                &nbsp;outputs:      ${`${network.outputs.length}`.padStart(6, '@').replaceAll("@","&nbsp;")}<br>
-                &nbsp;&nbsp;&nbsp;&nbsp;requests:<br>${requests}
-                &nbsp;&nbsp;&nbsp;&nbsp;items:<br>${items}
-                `
+        ],
+        ["row",[
+          ["raw-html",function() {
+            let txt=`networks: ${getGridData("fa", player.fa.pos).factory.IO}<br>`
+            for (const network of getGridData("fa",player.fa.pos).factory.networks){
+              let requests=""
+              for (let [item,requesters] of Object.entries(network.requests||{})){
+                if(requesters)requests+=`&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${item}: ${requesters.length}<br>`
               }
-              return `<div style="
-              text-align:left;
-              ">${txt}</div>` 
-            }],
+              let items=""
+              for (let [item,amount] of Object.entries(network.items)){
+                items+=`&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${item}: ${amount.toNumber()}<br>`
+              }
+              txt+=`
+              &nbsp;&nbsp;network ${network.id}:<br>
+              &nbsp;&nbsp;&nbsp;&nbsp;pipes: &nbsp; ${`${network.pipes.length}`.padStart(6, '@').replaceAll("@","&nbsp;")}
+              &nbsp;inputs: &nbsp;${`${network.inputs.length}`.padStart(6, '@').replaceAll("@","&nbsp;")}
+              &nbsp;outputs:      ${`${network.outputs.length}`.padStart(6, '@').replaceAll("@","&nbsp;")}<br>
+              &nbsp;&nbsp;&nbsp;&nbsp;requests:<br>${requests}
+              &nbsp;&nbsp;&nbsp;&nbsp;items:<br>${items}
+              `
+            }
+            return `<div style="
+            text-align:left;
+            ">${txt}</div>` 
+          }],
           ]],
           ["row",[
             ["clickable","update_io"],

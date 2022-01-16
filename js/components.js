@@ -758,8 +758,34 @@ function loadVue() {
 		`,
   })
 
-  
-	Vue.component('item-picker', {
+  Vue.component('item-picker',{
+    props: [],
+    template: `
+    <div 
+    v-if="player.fa.item_picker_state==='open'"
+    :style="
+    getPickerStyle()
+    ">
+    <grid style="
+    " layer="item_picker"></grid>
+    </div>
+    `,
+    methods: {
+      getPickerStyle(){
+        return `
+        margin-left: -50%;
+        width:max-content;
+        height:auto;
+        padding:10px;
+        border-radius:10px;
+        background-color:#22222244;
+        z-index:-100;
+        `
+      }
+    }
+  })
+
+	Vue.component('item-picker-button', {
     props: ['layer','data'],
     template: `
     <div style="
@@ -768,22 +794,14 @@ function loadVue() {
     v-on:click="onclick()"
     :style="getPickerStyle()"
     >{{accessvar(this.data)}}</button>
-    <div style="
-    width:max-content;
-    height:0px;
-    border:solid;
-    pointer-events:auto;
-    " class="item_picker_holder">
-    <grid style="
-    transform: translate(0px, -100%);
-    " layer="item_picker"></grid>
-    </div>
     </div>
     `,
     methods: {
       onclick(){
         console.log("click")
         let id=accessvar(this.data)
+
+        player.fa.item_picker_state="open"
         
         console.log(id)
         id=Number(cr_data.nameid[id])+1
