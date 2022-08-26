@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 
 <head>
+	<meta charset="utf-8" />
   <!--embed test-->
   <meta content="the dust-tree" property="og:title" />
   <meta content="a game about dust. and logic gates. and factory building." property="og:description" />
   <meta content="https://raw.githack.com/chipsams/The-Modding-Tree/master/index.html" property="og:url" />
-  <meta content="https://github.com/chipsams/The-Modding-Tree/raw/master/icon_E.png" property="og:image" />
+  <meta content="icon_E.png" property="og:image" />
   <meta content="#b9bffb" data-react-helmet="true" name="theme-color" />
 
 	<link rel="stylesheet" type="text/css" href="css/system-style.css" />
@@ -19,7 +20,7 @@
 
 	<link href="https://fonts.googleapis.com/css?family=Inconsolata" rel="stylesheet">
 
-	<script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script>
+	<script src="https://lf6-cdn-tos.bytecdntp.com/cdn/expire-1-M/vue/2.6.12/vue.min.js"></script>
 	<script src="js/technical/break_eternity.js"></script>
 	<script src="js/technical/layerSupport.js"></script>
 
@@ -44,12 +45,14 @@
   
   <!--hey i added these i hope they work-->
 	<script src="js/fraction.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/dom-to-image/2.6.0/dom-to-image.min.js" integrity="sha512-01CJ9/g7e8cUmY0DFTMcUw/ikS799FHiOA0eyHsUWfOetgbx/t6oV4otQ5zXKQyIrQGTHSmRVPIgrgLcZi/WMA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="dom-to-image.min.js" integrity="sha512-01CJ9/g7e8cUmY0DFTMcUw/ikS799FHiOA0eyHsUWfOetgbx/t6oV4otQ5zXKQyIrQGTHSmRVPIgrgLcZi/WMA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
 </head>
 
 
 <body onload="load()" onmousemove="updateMouse(event)">
+	<script src="chs.js"></script>
+	<script src="core.js"></script>
 	<div id="app">
 		<canvas id="treeCanvas" class="canvas" v-if="!(tmp.gameEnded && !player.keepGoing)"></canvas>
 
@@ -147,4 +150,21 @@
 		<div class = "bg2" v-bind:style = "tmp.backgroundStyle"></div>
 
 	</div>
+<!--客服 开始-->
+<script src="//g8hh.github.io/static/js/jquery.min.js"></script>
+<link rel="stylesheet" href="//g8hh.github.io/static/css/kf.css" type="text/css" media="screen" charset="utf-8">
+<script src="//g8hh.github.io/static/js/kf.js"></script>
+<!-- 客服 结束 -->
+<!--站长统计-->
+<div style="display: none"><script>
+	var _hmt = _hmt || [];
+	(function() {
+	  var hm = document.createElement("script");
+	  hm.src = "https://hm.baidu.com/hm.js?f237591d5976f87ca2e06b38c3658d9c";
+	  var s = document.getElementsByTagName("script")[0]; 
+	  s.parentNode.insertBefore(hm, s);
+	})();
+	</script>
+	
+		</div>
 </body>
