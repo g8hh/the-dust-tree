@@ -73,7 +73,7 @@ var cnItems = {
     "cross slate": "十字石板",
     "designer": "设计师",
     "divide": "除",
-    "divisive chip": "分裂筹码",
+    "divisive chip": "分裂芯片",
     "docs": "文档",
     "each sort of dust continously emits one kind of signal. this phenomenon is not well understood,\n        but it is absolutely a critical part of your arsenal.": "每一种尘埃都不断地发出一种信号。 这种现象还不是很清楚，\n 但它绝对是你武器库的关键部分。",
     "empty": "空",
